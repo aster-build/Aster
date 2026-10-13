@@ -1,0 +1,47 @@
+{
+  "version": "broader-v2",
+  "source_revision": "7e6de0bd2968c56589c580f2a397f01c531ede26",
+  "tasks": [
+    {
+      "id": "CHEMBL1862_Ki",
+      "role": "development",
+      "sha256": "c69adcbb021591ba2c564df1e9eb55d465b3c51e78d0237ec0527942eb20cfdb"
+    },
+    {
+      "id": "CHEMBL1871_Ki",
+      "role": "evaluation",
+      "sha256": "49d7f824fdbbc1c87fc69e239934558ac7e8612ca4c7e034314600b0b7c51821"
+    },
+    {
+      "id": "CHEMBL2034_Ki",
+      "role": "evaluation",
+      "sha256": "9b9f4cca381cfd9e240603b0af24d9de742e421b984daf08c7c2458132eb3e4b"
+    }
+  ],
+  "support_sizes": [
+    32,
+    64
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "protocols": [
+    "published",
+    "scaffold_transfer"
+  ],
+  "rounds": 5,
+  "batch_size": 8,
+  "hit_threshold": 7.0,
+  "trees": 200,
+  "ridge_alpha": 10.0,
+  "scaffold_fractions": [
+    0.2,
+    0.6,
+    0.2
+  ],
+  "checkpoint_sha256": "c376624d3407204e780a0ed13a9ac097cc9bb1c13ef89cdbc633c1715c183651",
+  "primary_metric": "pool_top_decile_recovery; 90th percentile inclusive; evaluator only",
+  "development_revision_reason": "v1 development absolute hit ceiling; added ranking metric before evaluation runs"
+}

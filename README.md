@@ -1,0 +1,142 @@
+# Aster
+
+A reproducible scientific backend for choosing which compounds to test next.
+This first milestone uses real ASAP–Polaris–OpenADMET SARS-CoV-2 Mpro potency
+measurements to compare random-forest-guided selection with random selection.
+The landing-page frontend lives separately in `../aster-hero`; it is not connected yet.
+
+## Run it
+
+Tested with Python 3.12.5 on macOS arm64. Use Python 3.12 for the captured dependency set.
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock.txt
+.venv/bin/python -m aster run
+```
+
+The command downloads only the 123 KB potency file and source metadata if missing,
+verifies the pinned file checksum, curates measurements, and runs the full experiment.
+Internet is needed for installation and the first fetch; reruns use the verified local cache.
+No cloud account or GPU is required. The supplied lock file captures the environment
+used for the reported run; different operating systems may need compatible wheel versions.
+
+Defaults: 100 initially observed compounds, five rounds of eight selections,
+ten paired seeds (0–9), a 200-tree random forest, and pIC50 ≥ 6 as the hit threshold.
+That threshold means IC50 ≤ 1 µM; it is a benchmark convention, not drug viability.
+
+Outputs appear in `artifacts/baseline/`, including:
+
+- `REPORT.md` and `discovery_curves.png`: results and limitations.
+- `selections.csv`: all recommendations with predictions made before outcomes were revealed.
+- `round_metrics.csv` and `audit_predictions.csv`: discovery and prediction performance.
+- `splits.json`, `config.json`, `environment.json`, `manifest.json`: reproducibility records.
+- `qc_rows.csv`, `qc_summary.json`, `curated.csv`: source-row curation and exclusions.
+- `seed0_greedy_model.joblib`, `seed0_random_model.joblib`: final models for the first configured seed.
+- `seed0_greedy_remaining.csv`: predictions for that greedy run's still-unmeasured candidates.
+- `artifact_checksums.json`: output integrity checks.
+
+Existing output directories are never overwritten. For another run:
+
+```sh
+.venv/bin/python -m aster run --output artifacts/reproduction
+```
+
+For a quick smoke run (not comparable to the full ten-seed result):
+
+```sh
+.venv/bin/python -m aster run --seeds 0 --trees 20 --output artifacts/smoke
+```
+
+Use `--help` for options. Changing initial size, budget, threshold or model settings
+creates a different experiment; do not choose them after inspecting test outcomes
+and describe the result as a blind evaluation.
+
+## What is implemented
+
+1. **Data acquisition:** pinned Zenodo v2 source and MD5 verification; source metadata and SHA256 recorded.
+2. **Curation:** RDKit CXSMILES validation, structure canonicalization, missing-label exclusion,
+   mixture rejection and conservative removal of all duplicate identity rows.
+3. **Features/model:** chirality-aware Morgan fingerprints (radius 2, 2,048 bits) and a random forest.
+4. **Replay:** select the highest predicted potency or a random batch, reveal only its measurements,
+   refit on accumulated observations, and repeat.
+5. **Audit:** predict the untouched published Test partition and score it after the replay completes.
+6. **Reporting:** per-seed records, paired comparison, fitted models and static plots.
+
+The experiment uses the published **Train** partition for initial support and hidden
+acquisition candidates. The published **Test** partition is never acquired or used for
+fitting, tuning, selection, or stopping. The two policies start from identical initial
+measurements for each seed. Initial support hits do not count toward newly discovered hits.
+
+“Hidden labels” is an evaluation technique, not content withheld from the user. All
+public measurements remain inspectable in local source/audit files. The oracle is an
+in-process API boundary, not a security sandbox against arbitrary code.
+
+## First completed run
+
+The pinned source contains 1,328 rows. This target has 223 missing measurements.
+Conservative duplicate removal excludes another 183 measured rows, leaving **712 Train
+and 210 Test compounds**. Duplicate groups are excluded wholesale rather than averaging
+potentially conflicting records or moving compounds across the published split.
+
+| After 40 additional assays, averaged over 10 seeds | Highest predicted potency | Random selection |
+| --- | ---: | ---: |
+| Additional hits (pIC50 ≥ 6) | 36.0 | 8.7 |
+| Final audit MAE, pIC50 units | 0.793 | 0.748 |
+| Final audit RMSE, pIC50 units | 0.970 | 0.912 |
+
+Mean paired discovery gain: **27.3 hits**; descriptive bootstrap interval across seeds:
+**25.3–29.1**. Greedy selection recovered more hits in all ten paired runs. This interval
+captures initialization variability on this dataset, not evidence across independent targets.
+
+Random selection gave slightly better average audit prediction error. Finding active
+compounds and improving global prediction accuracy are distinct objectives.
+
+This is a **single-target retrospective case study**, not evidence of discovering drugs
+or generalizing to arbitrary chemistry. Existing measured pools have selection bias;
+published splits can share chemical series. No uncertainty calibration, deep learning,
+or prospective laboratory experiment is included yet. Source numeric values lack explicit
+censoring and replicate flags; assay floors may therefore affect regression.
+
+## Validate
+
+```sh
+.venv/bin/python -m pytest -q
+```
+
+The initial suite has 11 tests covering duplicate/split leakage, stereo-sensitive features,
+missing and non-numeric outcomes, oracle access, policy independence from hidden labels,
+budget accounting, reproducibility of selection, and a complete offline synthetic-fixture run.
+Synthetic fixtures test code behavior; the reported results above use the real downloaded data.
+
+## Broader evaluation completed
+
+The broader evaluation and frozen-model comparison are now implemented. See
+[the broader evaluation guide](docs/BROADER_EVALUATION.md) for the fixed protocols,
+neural environment, exact commands and interpretation. The new report is generated
+at `artifacts/broader-v2/REPORT.md`; the original result above is preserved.
+
+All 144 replays completed. In the two evaluation tasks, mean strongest-decile recovery
+was 11.29/40 for the random forest, 12.75 for Morgan/ridge, and 11.38 for frozen
+CheMeleon/ridge. The frozen head also had unstable prediction errors. See
+[the result interpretation](docs/BROADER_RESULTS.md); these are descriptive results
+on a small, partially overlapping target suite, not proof of general superiority.
+
+Next: stabilize and evaluate frozen prediction heads on development tasks before
+controlled encoder fine-tuning. These inspected evaluation results are no longer
+a fresh blind benchmark for repeated model selection.
+
+See [ROADMAP.md](ROADMAP.md) for the architecture, fine-tuning plan and later product integration.
+
+## Source and attribution
+
+Scheen, J., MacDermott-Opeskin, H., Chodera, J., et al. (2025).
+*ASAP-Polaris-OpenADMET blind challenge data*, version 2.
+[DOI: 10.5281/zenodo.15582067](https://doi.org/10.5281/zenodo.15582067).
+Dataset license: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Full creator metadata is saved alongside results. The curated output is a filtered,
+canonicalized derivative of the published potency table; modifications are recorded in QC artifacts.
+
+Scientific software: [RDKit](https://github.com/rdkit/rdkit) and
+[scikit-learn](https://scikit-learn.org/stable/). Future neural comparison:
+[Chemprop](https://github.com/chemprop/chemprop) and [CheMeleon](https://github.com/chrissly31415/chemeleon).

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aster-discovery"
+version = "0.1.0"
+description = "Reproducible retrospective molecular selection benchmark"
+requires-python = ">=3.11"
+dependencies = ["rdkit", "numpy", "pandas", "scikit-learn", "matplotlib", "joblib"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+neural = ["chemprop==2.3.1"]
+
+[project.scripts]
+aster = "aster.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["aster*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
