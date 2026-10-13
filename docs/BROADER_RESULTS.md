@@ -85,3 +85,10 @@ Full results: `artifacts/broader-v2/REPORT.md`, `comparison.png`,
 and `development_diagnostic.json`. Individual replay JSON files retain all choices
 and outcomes. The [protocol and reproduction guide](BROADER_EVALUATION.md)
 documents the dataset/checkpoint provenance and model settings.
+
+## Completed follow-up
+
+The head-stability sweep, additional-target evaluation, and bounded encoder
+fine-tuning pilot are complete. See [the follow-up findings](STABILITY_RESULTS.md)
+and [the fixed protocol](STABILITY_PROTOCOL.md). The original results above remain
+unchanged and are no longer a fresh test set for model selection.

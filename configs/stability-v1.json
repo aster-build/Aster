@@ -1,0 +1,34 @@
+{
+  "version": "stability-v1",
+  "development_task": "CHEMBL1862_Ki",
+  "development_prepared": "artifacts/broader-v2-prepared",
+  "candidates": [
+    {"id": "standard_10", "mode": "standard", "alpha": 10},
+    {"id": "center_10", "mode": "center", "alpha": 10},
+    {"id": "center_100", "mode": "center", "alpha": 100},
+    {"id": "floor_10", "mode": "floor", "alpha": 10, "floor": 0.1},
+    {"id": "filter_10", "mode": "filter", "alpha": 10, "floor": 0.01},
+    {"id": "standard_1000", "mode": "standard", "alpha": 1000}
+  ],
+  "gate": {
+    "prediction_guard": [0, 14],
+    "mean_round_mae_max": 1.25,
+    "worst_round_mae_max": 2.0,
+    "selection_fraction_of_current_min": 0.9,
+    "selection_fraction_of_random_min": 1.5,
+    "selection_rule": "Among passing candidates maximize mean final top-decile discoveries; break ties by mean all-round audit MAE, then candidate ID. No expanded search if none pass."
+  },
+  "additional_targets": ["CHEMBL214_Ki", "CHEMBL262_Ki", "CHEMBL4203_Ki"],
+  "evaluation_support_sizes": [32, 64],
+  "evaluation_seeds": [0, 1],
+  "evaluation_protocols": ["published", "scaffold_transfer"],
+  "rounds": 5,
+  "batch_size": 8,
+  "fine_tuning": {
+    "support_sizes": [32], "seeds": [0], "protocols": ["published", "scaffold_transfer"],
+    "epochs": 5, "batch_size": 16, "encoder_lr": 0.00001, "head_lr": 0.0001,
+    "weight_decay": 0.0001, "gradient_norm_max": 1.0,
+    "device": "cpu", "threads": 2,
+    "recipe": "Each round restart foundation encoder; initialize auxiliary linear head from selected ridge; train encoder and head on observed normalized outcomes only; refit the same selected ridge on adapted features. Fixed epochs, no audit early stopping."
+  }
+}

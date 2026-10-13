@@ -1,6 +1,6 @@
 # Aster roadmap
 
-Prepared: 2026-10-13. Status: first retrospective baseline completed; the remaining implementation and research plan is proposed.
+Updated: 2026-10-13. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning pilot completed. Later product integration remains proposed.
 
 ### Implementation update — first milestone completed
 
@@ -13,8 +13,8 @@ After QC, the experiment uses 712 published Train compounds and 210 published Te
 compounds. Greedy selection recovered 36.0 additional hits on average versus 8.7 for
 random selection; random selection had slightly better final audit MAE (0.748 versus
 0.793). This is retrospective single-target evidence, not prospective validation.
-Eleven tests passed. Neural fine-tuning, uncertainty-aware selection and dashboard
-integration remain planned. The report is generated at `artifacts/baseline/REPORT.md`.
+Eleven tests passed at that milestone. Neural fine-tuning was subsequently completed
+in the bounded pilot below; uncertainty-aware selection and dashboard integration remain planned. The report is generated at `artifacts/baseline/REPORT.md`.
 
 ### Second milestone — evaluation before added model complexity
 
@@ -44,14 +44,61 @@ broader evaluation followed by frozen CheMeleon comparison. See
 - [x] Investigate the unstable frozen head on development data. Training-only
   standardization amplified rare feature variation into extreme audit features
   and predictions. Preserve the original result, including its failures.
-- [ ] Test stable frozen heads on development data before promoting a neural
+- [x] Test stable frozen heads on development data before promoting a neural
   predictor or investing in encoder fine-tuning. See [results](docs/BROADER_RESULTS.md).
-- [ ] Run a bounded fine-tuning experiment after freezing its development-selected
+- [x] Run a bounded fine-tuning experiment after freezing its development-selected
   settings and defining genuinely additional evaluation tasks for further iteration.
 
-No paid GPU compute is required for the implemented frozen comparison. Full encoder
-fine-tuning, uncertainty-aware acquisition, dashboard integration and prospective
-laboratory validation remain separate milestones.
+The bounded local encoder fine-tuning pilot is now complete (third milestone below).
+Broader adaptation studies, uncertainty-aware acquisition, dashboard integration
+and prospective laboratory validation remain later milestones. No paid GPU was used.
+
+### Third milestone — stability, then additional-target transfer
+
+Protocol and reproducible commands: [STABILITY_PROTOCOL.md](docs/STABILITY_PROTOCOL.md).
+Configs: `configs/stability-v1.json`, `configs/transfer-v1.json`.
+
+- [x] Predeclare six head recipes and joint stability/discovery gates; run 108
+  development replays with both Morgan references and random selection.
+- [x] Freeze a training-only feature filter (standard deviation >=0.01), then
+  standardization and ridge alpha 10. No prediction clipping. It eliminated
+  development guard violations and found 14.83 strongest-decile compounds per
+  40 picks, versus 10.33 for the unstable head and 15.17 for Morgan/ridge.
+- [x] Evaluate the frozen recipe on three additional targets, two protocols,
+  starting sizes 32/64 and two seeds: 96 replays. Exclude structures shared with
+  all previously inspected targets, preserving exact source and split manifests.
+- [x] Record the negative aggregate transfer result: frozen CheMeleon found
+  15.50 strongest-decile compounds per 40 picks versus 17.33 for Morgan/RF and
+  18.67 for Morgan/ridge. All predictions stayed inside the broad [0,14] guard;
+  sensible-valued predictions do not guarantee useful selection.
+- [x] Implement deterministic, observed-only encoder adaptation and pass a
+  development runtime check. Fixed five-epoch schedule, local CPU, same final
+  ridge policy, fresh foundation initialization each round.
+- [x] Complete the predeclared six-case fine-tuning pilot (all three new targets,
+  both protocols, 32 initial measurements, seed 0, the same 40-pick budget),
+  validate its predictions and compare only matching frozen/Morgan cases.
+  Fine-tuned CheMeleon found 13.67 strongest-decile compounds versus frozen 15.33,
+  Morgan/RF 16.17 and Morgan/ridge 17.33. It tied frozen in four cases and lost
+  in two; audit MAE was nearly unchanged (0.905 versus 0.904). Do not promote
+  this adaptation recipe.
+- [x] Validate all 210 main replays, pass 28 tests, preserve source snapshots and
+  record paired results in [the milestone findings](docs/STABILITY_RESULTS.md).
+  Full report: `artifacts/transfer-tuned-v1/REPORT.md`.
+- [ ] Add measured reliability beyond gross numerical guards: nearest-measured
+  chemical similarity and uncertainty calibration, evaluated for actual failure
+  detection under shift. A guard is not a confidence interval.
+- [ ] Test a decision policy that responds to unreliability or adds diversity,
+  against Morgan/ridge, on newly reserved targets or prospective measurements.
+
+Keep Morgan/ridge as the strongest provisional reference. These additional targets
+are project-held-out, not guaranteed absent from foundation-model pretraining or
+published model selection. Two of the new targets are kinases. Do not promote a
+neural model from development performance or a single small adaptation pilot.
+Do not tune further on these inspected evaluation outputs and call them blind.
+The next research milestone is reliability-aware selection against Morgan/ridge:
+use development data for policy design, reserve additional targets before checking
+performance, and test whether uncertainty/diversity changes improve experimental
+choices. Build the workflow using the reference model while that research proceeds.
 
 ## 1. Product thesis and assumptions
 
@@ -332,13 +379,13 @@ The schedule assumes focused work and dataset availability. A negative model res
 ### First ten implementation tasks
 
 - [ ] Locate/import the intended frontend source and read its installed Next.js documentation.
-- [ ] Select an assay and create a versioned dataset manifest.
+- [x] Select an assay and create a versioned dataset manifest.
 - [ ] Define molecule, assay, measurement, snapshot and model-run schemas.
 - [ ] Implement CSV validation, structure standardization and correct endpoint normalization.
-- [ ] Create duplicate-aware splits and hidden-label replay interfaces.
-- [ ] Train the fingerprint baseline and reproduce its metrics from a saved configuration.
-- [ ] Add frozen CheMeleon embeddings and a small prediction head.
-- [ ] Run one controlled fine-tuning comparison.
+- [x] Create duplicate-aware splits and hidden-label replay interfaces.
+- [x] Train the fingerprint baseline and reproduce its metrics from a saved configuration.
+- [x] Add frozen CheMeleon embeddings and a small prediction head.
+- [x] Run one controlled fine-tuning comparison.
 - [ ] Implement batch selection with exclusions, locks and diversity.
 - [ ] Feed real saved predictions into the prototype map, inspector and shortlist.
 

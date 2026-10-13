@@ -122,9 +122,27 @@ CheMeleon/ridge. The frozen head also had unstable prediction errors. See
 [the result interpretation](docs/BROADER_RESULTS.md); these are descriptive results
 on a small, partially overlapping target suite, not proof of general superiority.
 
-Next: stabilize and evaluate frozen prediction heads on development tasks before
-controlled encoder fine-tuning. These inspected evaluation results are no longer
-a fresh blind benchmark for repeated model selection.
+## Stable heads and new-target transfer
+
+The next milestone is implemented in `aster.steady`, `aster.transfer`, and
+`aster.adaptation`. See [the protocol](docs/STABILITY_PROTOCOL.md).
+A six-head development comparison selected training-only removal of near-constant
+features followed by standardized ridge. No predictions are clipped.
+
+Across 96 new-target replays the repaired frozen model stayed inside the numerical
+guard but recovered 15.50 strongest-decile compounds per 40 picks, versus 17.33
+for Morgan/random forest and 18.67 for Morgan/ridge. The latter remains a
+provisional reference, not a universal winner. The matched six-case local CPU
+fine-tuning pilot also completed: 13.67 discoveries versus 15.33 for frozen
+CheMeleon and 17.33 for Morgan/ridge on those same cases. This adaptation recipe
+showed no advantage. See [the findings](docs/STABILITY_RESULTS.md) and the full
+`artifacts/transfer-tuned-v1/REPORT.md`.
+
+Use `requirements-neural.lock.txt` for these experiments. The 28-test suite also
+checks stable-head behavior and deterministic encoder updates (the neural test
+skips if the optional package or local checkpoint is unavailable). The original
+baseline and broader-v2 artifacts remain unchanged. Inspected evaluation results
+are no longer fresh blind benchmarks for future recipe selection.
 
 See [ROADMAP.md](ROADMAP.md) for the architecture, fine-tuning plan and later product integration.
 
@@ -138,5 +156,5 @@ Full creator metadata is saved alongside results. The curated output is a filter
 canonicalized derivative of the published potency table; modifications are recorded in QC artifacts.
 
 Scientific software: [RDKit](https://github.com/rdkit/rdkit) and
-[scikit-learn](https://scikit-learn.org/stable/). Future neural comparison:
+[scikit-learn](https://scikit-learn.org/stable/). Neural comparison:
 [Chemprop](https://github.com/chemprop/chemprop) and [CheMeleon](https://github.com/chrissly31415/chemeleon).
