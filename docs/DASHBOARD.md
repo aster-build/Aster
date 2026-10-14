@@ -149,3 +149,11 @@ The live workspace places the candidate map and compound inspector side by side,
 Live evidence remains distinct from illustrative hero data: the dashboard displays actual ridge predictions, measured analogs, and Tanimoto similarity. It does not render the hero's illustrative uncertainty intervals as model outputs.
 
 Design verification: production build and TypeScript passed; desktop and 390px mobile layouts were inspected; two public replay rounds preserved 32 → 40 → 48 measurements after reload. The root URL redirects to the workspace; the landing page is maintained separately.
+
+### Adjustable panels
+
+The live dashboard has no traffic-light window controls. Its campaign header, open shortlist rows, outlined proposed markers, larger structure card, and aligned evidence rows follow the hero prototype.
+
+On desktop, drag the vertical divider to change the landscape/inspector width ratio. Drag the divider below those panels to adjust their shared height, or the divider below the batch to change the table's scrollable height. Focus a divider and use arrow keys for keyboard resizing; Home/End select its bounds. Double-click resets one divider, and **Reset layout** restores all dimensions. Sizes persist locally across reloads. Mobile uses stacked, naturally sized panels.
+
+Verified with a real pointer drag, keyboard height adjustments, persisted dimensions after reload, reset, a live 128-candidate/eight-pick preview, and a 390px mobile overflow check. Production build and TypeScript passed.
