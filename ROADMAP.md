@@ -1,6 +1,62 @@
 # Aster roadmap
 
-Updated: 2026-10-13. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; structural evidence is next. Structural evidence, literature RAG, and a controlled evidence-augmented selection study are proposed below.
+Updated: 2026-10-14. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation, expanded structural analysis, literature RAG, and a controlled evidence-augmented selection study remain proposed below.
+
+### Milestone 7B — exploratory docking implemented locally (2026-10-14)
+
+- [x] Predeclare and execute five-seed native-ligand redocking: **4/5 top-1 poses <2 Å with physical checks passing**. Seed 71 failed pose recovery; best top-5 was 1.01 Å. Native reference passed physical checks.
+- [x] Record preparation limitations: protein-only scoring; ions/glycans excluded, retained in physical validation; all protein heavy-atom coordinates preserved.
+- [x] User-triggered, bounded and persisted local docking jobs for verified DAT demo compounds; explicit errors for unspecified stereochemistry or unsupported preparation.
+- [x] Candidate/reference 3D overlay, alternative poses, failed-pose rejection, shared/new geometric contacts, downloadable validation/provenance. Campaign rankings remain unchanged.
+- [ ] Independent cross-docking on additional compatible DAT structures.
+- [ ] Ion-aware preparation and predeclared protonation/tautomer sensitivity studies.
+- [ ] Evaluate whether structural evidence improves held-out compound selection; no affinity or selection benefit established yet.
+
+See [DOCKING.md](docs/DOCKING.md) for results, controls, architecture and reproducibility. This is an exploratory visualization milestone, not completed docking generalization validation.
+
+### Milestone 7A — first molecular evidence replay implemented (2026-10-14)
+
+Implemented locally at `/replay`; see [MOLECULAR_REPLAY.md](docs/MOLECULAR_REPLAY.md).
+A 3D molecular workspace and synchronized campaign replay now precede RAG,
+more model tuning, or molecular dynamics. Forepaw is a visual-layout reference only;
+no robotics, dimOS, or robot-planning functionality is in scope.
+
+- [x] First verify one experimental protein–ligand complex and its relationship to
+  the campaign. Human dopamine-transporter entry [8Y2G](https://www.rcsb.org/structure/8Y2G)
+  is the verified experimental reference. Exact isomeric-SMILES comparison found no
+  matches among the 160 demo compounds; it is not a candidate bound pose.
+- [x] Make a central Mol* scene with protein overview, pocket close-up, ligand and
+  residue/contact highlighting. Camera tours and staged highlights explain a static
+  structure; label any illustrative motion, never represent it as observed binding.
+- [x] Surround the scene with resizable/collapsible panels: structure provenance and
+  nearby residues on the left; input measurements, selected compound, ranking and
+  measured analog evidence on the right; campaign timeline and predicted-versus-observed results below.
+- [x] Implement Play / Pause / Step / Restart across saved events:
+  measurements → model fit → candidate scoring → batch selection → outcome reveal
+  → refit. Replay actual round artifacts; show rankings across rounds and before/after prediction changes
+  where stored. Mark missing historical scores as unavailable rather than inventing them.
+- [x] Label the current learner Morgan + ridge. Separate structure context from
+  features actually used by the model. Show the saved fit recipe and feature count; detailed fragment attribution
+  remains deferred until numerical checks and collision handling are implemented. Neural-training replay
+  is later and must use real saved neural run artifacts.
+- [x] Keep structure and campaign timelines distinct: an experimental complex is
+  a structural snapshot, not a time-resolved binding trajectory. Missing exact poses
+  show an explicit unavailable state or a clearly labelled reference analog.
+
+Architecture: existing Next.js/React shell + client-only Mol*; Next.js serves pinned
+mmCIF assets and provenance; FastAPI serves recorded campaign artifacts; SQLite/local artifacts store
+replay manifests. RDKit handles molecular identity; PLIP is deferred; this first version uses explicitly labelled ≤4 Å heavy-atom
+proximity with verified atom mappings. No GPU training is required for this first viewer.
+
+Exit gate: one verified reference complex, synchronized compound/residue selection,
+two replayed campaign rounds with outputs matching saved records, source/type labels,
+responsive panels, and a non-WebGL fallback. Docking is now available as exploratory milestone 7B above;
+actual molecular-dynamics trajectories are a separate later extension, not required
+for the initial animated walkthrough. Literature RAG follows this milestone.
+
+Validation: production build/TypeScript and 56 Python tests passed. The first
+implementation uses a static experimental complex, camera animation, and recorded
+round replay; milestone 7B adds docking separately. Dynamics and neural optimization playback remain unimplemented.
 
 ### Implementation update — first milestone completed
 
@@ -176,7 +232,7 @@ Guide: [DASHBOARD.md](docs/DASHBOARD.md). Frontend: `apps/web/`. API: `aster/api
 - [x] Verify a browser replay of two eight-compound rounds: 32 → 40 → 48 measurements,
   plus reload persistence and a normal CSV campaign import. Inspect desktop/mobile layouts.
 - [x] Pass 54 Python tests and the Next.js production/TypeScript build.
-- [ ] Review the working prototype before adding the structural evidence inspector.
+- [x] Review and refine the working prototype; add the first structural evidence replay.
 
 This is a local prototype, not a public deployment or a new scientific benchmark.
 The separate original `aster-hero` project and Vercel landing deployment are unchanged.
@@ -190,14 +246,15 @@ platform is not required for the next milestone. Inspected `ProductPreview.tsx`,
 
 Detailed brainstorming, stack, architecture, data contracts, prior work, sources,
 and evaluation gates: [PRODUCT_EXTENSIONS.md](docs/PRODUCT_EXTENSIONS.md).
-Milestone 6 is implemented locally. Milestones 7–9 remain planned and are not
+Milestone 6 and the first 7A evidence replay are implemented locally. Later structural
+expansion and milestones 8–9 remain planned and are not
 scientifically validated.
 
 | Milestone | Scope and proposed stack | Exit gate |
 | --- | --- | --- |
 | 6. Connect the existing prototype — complete locally | Existing Next.js/React/TypeScript UI → FastAPI/Pydantic → campaign package, SQLite, local worker; retain the visual design | Browser import → preview → commit eight picks → export → import results → round two, with saved state and real evidence |
-| 7A. 3D structural evidence and decision inspector | Mol* viewer; RCSB experimental complexes; RDKit identity/analog mapping; PLIP contact annotations in a separate worker | Verified ligand/target/atom mapping, source-labelled structure, contact selection and nearest-measured evidence; no invented binding pose |
-| 7B. Optional predicted poses | AutoDock Vina pilot with recorded preparation, pocket and seeds | Predeclared pose-validation checks pass; predicted poses remain labelled and docking scores do not replace potency |
+| 7A. First 3D evidence replay — implemented locally | Mol*; pinned RCSB 8Y2G; RDKit identity checking; verified geometric proximity; saved campaign replay. PLIP deferred | Verified ligand/target/atom mapping, source-labelled structure, contact selection and nearest-measured evidence; no invented binding pose |
+| 7B. Exploratory predicted poses — implemented locally; transfer validation pending | AutoDock Vina pilot with recorded preparation, pocket and seeds | Predeclared pose-validation checks pass; predicted poses remain labelled and docking scores do not replace potency |
 | 8. Literature evidence RAG | Europe PMC permitted content + ChEMBL records; typed claims, entity resolution, lexical/dense retrieval; SQLite FTS5/NumPy initially, Postgres/pgvector when warranted | Reviewed retrieval/extraction/citation test set, contradiction handling and abstention; literature does not silently change model scores |
 | 9. Evidence-augmented selection research | Compare baseline, reviewed literature augmentation, structural features, and combined evidence; optional MoleculeSTM-style retrieval/fusion later | Frozen corpus and model, no hidden-label access, matched information/budgets, and additional-target evaluation before promotion |
 

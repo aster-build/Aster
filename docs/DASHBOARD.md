@@ -138,9 +138,10 @@ Starlette test-client deprecation warning is currently emitted; tests still pass
 
 ## Next milestone
 
-Review this workflow, then add the scoped structural-evidence inspector described
-in [PRODUCT_EXTENSIONS.md](PRODUCT_EXTENSIONS.md). 3D rendering, docking, literature
-RAG, calibrated confidence and public deployment are not implemented in this slice.
+The local 3D structural-evidence inspector and exploratory docking are implemented;
+see [MOLECULAR_REPLAY.md](MOLECULAR_REPLAY.md) and [DOCKING.md](DOCKING.md).
+Independent docking transfer validation, literature RAG, calibrated confidence,
+and public deployment remain future work in [PRODUCT_EXTENSIONS.md](PRODUCT_EXTENSIONS.md).
 
 ## Prototype design integration
 
@@ -157,3 +158,15 @@ The live dashboard has no traffic-light window controls. Its campaign header, op
 On desktop, drag the vertical divider to change the landscape/inspector width ratio. Drag the divider below those panels to adjust their shared height, or the divider below the batch to change the table's scrollable height. Focus a divider and use arrow keys for keyboard resizing; Home/End select its bounds. Double-click resets one divider, and **Reset layout** restores all dimensions. Sizes persist locally across reloads. Mobile uses stacked, naturally sized panels.
 
 Verified with a real pointer drag, keyboard height adjustments, persisted dimensions after reload, reset, a live 128-candidate/eight-pick preview, and a 390px mobile overflow check. Production build and TypeScript passed.
+
+The selected-compound inspector now includes **Explore 3D docking**. It opens the selected campaign/compound in the molecular workspace, where users can request and revisit persisted docking jobs. Only the verified DAT demo is enabled. See [DOCKING.md](DOCKING.md) for validation results, controls, limitations and setup.
+
+## Workspace separation check (2026-10-14)
+
+The marketing components, illustrative data, and landing-page navigation were
+removed from this repository. The root route redirects to `/dashboard`.
+All 60 Python tests pass. The production build and TypeScript check pass with
+`npm --prefix apps/web run build -- --webpack`; the default Turbopack build
+encountered a local build-worker port permission error in this environment.
+The generated root page was checked for its dashboard redirect. Browser workflow
+checks above describe prior feature verification and were not rerun for this removal.

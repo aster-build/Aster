@@ -221,4 +221,14 @@ Scientific software: [RDKit](https://github.com/rdkit/rdkit) and
 The existing prototype is now connected locally to this backend.
 The [extension plan](docs/PRODUCT_EXTENSIONS.md) scopes later 3D protein–ligand
 evidence, compound-aware literature retrieval, and a controlled experiment to test
-whether external evidence improves selection. These are proposals, not implemented features.
+whether external evidence improves selection. Structural replay and exploratory docking
+are now implemented locally as described below; literature retrieval and the
+controlled selection study remain proposed.
+
+### Molecular evidence replay
+
+Open [the local replay](http://127.0.0.1:3000/replay) after starting the dashboard services. Explore the experimental DAT reference structure and replay saved campaign decisions. See [scope, provenance, and verification](docs/MOLECULAR_REPLAY.md).
+
+### Exploratory docking
+
+The dashboard inspector links to user-triggered DAT docking and 3D candidate/reference comparison. Five-seed redocking passed 4/5; cross-docking is untested and protein-only scoring omits ions. See [docking results and setup](docs/DOCKING.md).
