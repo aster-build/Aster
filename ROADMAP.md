@@ -1,6 +1,6 @@
 # Aster roadmap
 
-Updated: 2026-10-13. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning pilot completed. Later product integration remains proposed.
+Updated: 2026-10-13. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; integrate the existing prototype next. Structural evidence, literature RAG, and a controlled evidence-augmented selection study are proposed below.
 
 ### Implementation update — first milestone completed
 
@@ -84,10 +84,10 @@ Configs: `configs/stability-v1.json`, `configs/transfer-v1.json`.
 - [x] Validate all 210 main replays, pass 28 tests, preserve source snapshots and
   record paired results in [the milestone findings](docs/STABILITY_RESULTS.md).
   Full report: `artifacts/transfer-tuned-v1/REPORT.md`.
-- [ ] Add measured reliability beyond gross numerical guards: nearest-measured
+- [x] Add measured reliability beyond gross numerical guards: nearest-measured
   chemical similarity and uncertainty calibration, evaluated for actual failure
   detection under shift. A guard is not a confidence interval.
-- [ ] Test a decision policy that responds to unreliability or adds diversity,
+- [x] Test a decision policy that responds to unreliability or adds diversity,
   against Morgan/ridge, on newly reserved targets or prospective measurements.
 
 Keep Morgan/ridge as the strongest provisional reference. These additional targets
@@ -95,10 +95,122 @@ are project-held-out, not guaranteed absent from foundation-model pretraining or
 published model selection. Two of the new targets are kinases. Do not promote a
 neural model from development performance or a single small adaptation pilot.
 Do not tune further on these inspected evaluation outputs and call them blind.
-The next research milestone is reliability-aware selection against Morgan/ridge:
+The fourth milestone below completed this reliability-aware selection comparison. Its plan was:
 use development data for policy design, reserve additional targets before checking
 performance, and test whether uncertainty/diversity changes improve experimental
 choices. Build the workflow using the reference model while that research proceeds.
+
+### Fourth milestone — reliability-aware selection completed
+
+Protocol: [RELIABILITY_PROTOCOL.md](docs/RELIABILITY_PROTOCOL.md).
+Findings: [RELIABILITY_RESULTS.md](docs/RELIABILITY_RESULTS.md).
+
+- [x] Predeclare seven policies, numerical/reliability checks and a practical
+  discovery improvement gate. Preserve both Morgan references and random selection.
+- [x] Add 16-member bootstrap disagreement, nearest-measured Tanimoto novelty,
+  training-only cross-validation residual bands, and interpretable batch score traces.
+- [x] Run 84 development replays. Freeze the exploration policy (mean +0.5×
+  disagreement) before downloading three additional outcome datasets.
+- [x] Run 168 fresh-target replays on dopamine transporter, sigma receptor 1 and
+  PI3K alpha, excluding compounds shared with all six previously inspected tasks.
+- [x] Validate all 252 replays; 34 software tests pass. No paid compute used.
+- [x] Record the negative primary result: exploration 14.17 versus greedy 14.29
+  strongest-decile discoveries per 40 picks. Keep greedy Morgan/ridge as default.
+- [x] Record weak error detection: bootstrap disagreement AUC 0.477; novelty AUC
+  0.610 under greedy. Approximate nominal-80% bands cover 72.5% of audit outcomes.
+  Do not present ensemble spread as calibrated uncertainty.
+- [x] Record the secondary diversity signal: 15.13 discoveries and 24.0 novel
+  scaffolds versus greedy 14.29 and 20.7. The +0.83 discovery gain is below the
+  predeclared +1 threshold; do not promote it from this secondary comparison.
+- [x] Build a local campaign workflow: validated CSV import, a saved model/run,
+  reproducible eight-compound proposal, exclusions/locked picks, export/import
+  outcomes, and a second round.
+- [ ] Connect it to the dashboard using the current reference model and honest
+  reliability labels.
+- [ ] Review that workflow with a discovery scientist. Reserve new targets or
+  prospective measurements before testing any revised selection policy.
+
+You are entering Phase 4 (product integration). The first policy/reliability
+comparison and a local campaign workflow with locks/exclusions are complete.
+Dashboard integration, shared storage/authentication and background jobs remain unfinished.
+The [milestone poster gallery](output/posters/index.html) explains all four completed
+scientific milestones, with PNG/SVG exports, sources and a current-workflow image.
+These are retrospective research results, not clinical claims.
+
+### Fifth milestone — local campaign lifecycle completed
+
+[Workflow guide](docs/CAMPAIGN_WORKFLOW.md): `python -m aster.campaign`.
+
+- [x] Define a single-assay campaign, molecule states, immutable round snapshots,
+  fitted model records, and a transactional SQLite store with numbered events.
+- [x] Validate measured/candidate CSVs; reject duplicate chemistry, invalid structures,
+  nonfinite/censored values, and candidate outcome columns. Require explicit pKi or
+  pIC50 values already on the molar logarithmic scale; do not guess units.
+- [x] Generate batches of eight using Morgan/ridge, with locked and excluded compounds.
+  Save predictions, selection reasons, and nearest observed-compound evidence.
+- [x] Export batches, import partial or failed assay results, reject conflicting edits,
+  support idempotent import retries, and refit the next round.
+- [x] Verify two full CLI rounds on previously inspected public CHEMBL238 data:
+  32 initial observations, 128 candidates, 16 unique picks, 48 final measurements.
+  The published Test partition is unused; this is workflow verification, not a
+  fresh scientific evaluation. See `artifacts/campaign-demo-v1/REPORT.md`.
+- [x] Add 15 lifecycle/validation/concurrency/recovery tests; 49 total tests pass.
+- [ ] Connect the campaign operations to an import/review/results dashboard.
+- [ ] Add asynchronous jobs, authenticated shared access, and reviewed corrections
+  before deployment or private lab data. Obtain domain feedback on the workflow.
+
+No neural retraining, new acquisition-policy promotion, or paid compute was needed.
+The prior four posters describe scientific results; this milestone adds workflow
+infrastructure rather than another claim of discovery performance.
+
+### Planned milestones 6–9 — prototype, structural evidence, and literature
+
+Scope confirmed: reuse the prototype dashboard in `../aster-hero`; a full SaaS
+platform is not required for the next milestone. Inspected `ProductPreview.tsx`,
+`CandidateMap.tsx`, and `src/lib/data.ts`: the current interface runs on illustrative
+values and is not connected to the campaign database.
+
+Detailed brainstorming, stack, architecture, data contracts, prior work, sources,
+and evaluation gates: [PRODUCT_EXTENSIONS.md](docs/PRODUCT_EXTENSIONS.md).
+These additions are planned, not implemented or scientifically validated.
+
+| Milestone | Scope and proposed stack | Exit gate |
+| --- | --- | --- |
+| 6. Connect the existing prototype | Existing Next.js/React/TypeScript UI → FastAPI/Pydantic → campaign package, SQLite, local worker; retain the visual design | Browser import → preview → commit eight picks → export → import results → round two, with saved state and real evidence |
+| 7A. 3D structural evidence and decision inspector | Mol* viewer; RCSB experimental complexes; RDKit identity/analog mapping; PLIP contact annotations in a separate worker | Verified ligand/target/atom mapping, source-labelled structure, contact selection and nearest-measured evidence; no invented binding pose |
+| 7B. Optional predicted poses | AutoDock Vina pilot with recorded preparation, pocket and seeds | Predeclared pose-validation checks pass; predicted poses remain labelled and docking scores do not replace potency |
+| 8. Literature evidence RAG | Europe PMC permitted content + ChEMBL records; typed claims, entity resolution, lexical/dense retrieval; SQLite FTS5/NumPy initially, Postgres/pgvector when warranted | Reviewed retrieval/extraction/citation test set, contradiction handling and abstention; literature does not silently change model scores |
+| 9. Evidence-augmented selection research | Compare baseline, reviewed literature augmentation, structural features, and combined evidence; optional MoleculeSTM-style retrieval/fusion later | Frozen corpus and model, no hidden-label access, matched information/budgets, and additional-target evaluation before promotion |
+
+- [ ] Replace synthetic counts, compound IDs, rationale text and pIC50-only labels
+  with campaign data. Use eight picks by default and show the declared endpoint.
+- [ ] Replace illustrative confidence intervals and uncertainty-derived roles with
+  supported evidence. Prefer a prediction-versus-nearest-measured-similarity plot;
+  similarity/novelty must not be called calibrated confidence.
+- [ ] Add separate non-mutating proposal previews and explicit commit, with stale
+  snapshot detection. Current CLI `propose` commits immediately.
+- [ ] Persist scored eligible-pool outputs for the map; saved rounds currently retain
+  selected predictions and model coefficients rather than a full scored-pool table.
+- [ ] Select one target with verified structural coverage. Interpret interaction as
+  protein–ligand binding initially; drug–drug interactions and dynamics are separate.
+- [ ] Keep model-selection reasons distinct from structural hypotheses. Morgan/ridge
+  does not consume protein coordinates, so a displayed contact cannot explain its score.
+- [ ] Build a small target-specific literature corpus before broad ingestion. Preserve
+  document dates, licenses, exact claim sources, compound identity, and assay context.
+- [ ] Evaluate retrieval quality independently from downstream selection performance.
+  No LLM fine-tuning is needed for the initial evidence retrieval milestone.
+- [ ] Before research fusion, freeze a temporal/hidden-outcome exclusion protocol.
+  Retrieved known measurements are initial knowledge, not newly discovered hits.
+- [ ] Test assay-aware external evidence first; consider learned structure/text
+  retrieval or fusion only after simpler information-matched baselines.
+
+**Differentiation:** prediction, active learning, 3D interaction views and scientific
+RAG already exist (Cerella, deepmirror, BayBE, Mol*/PLIP, PaperQA, MoleculeSTM).
+Aster currently demonstrates a reproducible evaluation/workflow foundation, not
+superior discovery or a novel model. The proposed contribution is an auditable
+connection between each decision, its assay-compatible evidence and its measured
+outcome, plus a rigorous test of when external evidence improves low-data selection.
+This is a research direction to validate, not a claim that competitors lack it.
 
 ## 1. Product thesis and assumptions
 
@@ -119,7 +231,7 @@ Planning assumptions:
 
 The deployed [prototype](https://aster-ruby.vercel.app/) was inspected in the browser. It shows 134 untested candidates, 18 assayed compounds, a six-compound round-three proposal, activity/uncertainty plots, molecular descriptors, analog evidence, and budget controls. Those values are illustrative, not training data.
 
-At planning time this local checkout contains an empty README and Git history; the frontend source inspected earlier in this conversation is no longer present. Phase 0 must locate/import the intended landing-page source or scaffold the application. Do not assume existing components are locally available.
+The scientific backend now lives in this repository, and the prototype frontend is present at `../aster-hero`. Reuse its components for the next milestone; its current synthetic data must be replaced through an explicit API adapter.
 
 ## 2. Convert the prototype into a working product
 
@@ -127,7 +239,7 @@ At planning time this local checkout contains an empty README and Git history; t
 | --- | --- | --- |
 | Campaign and round header | Select an assay campaign; inspect previous rounds and dataset versions | Campaign, round, assay definition, model run and snapshot IDs |
 | Predict → Prioritize → Test → Learn | Explicit, resumable workflow with running, failed, and completed states | Job status and allowed state transitions |
-| Activity-versus-uncertainty candidate map | Plot real predictions; filter measured, untested, excluded and proposed candidates | Mean, uncertainty type, endpoint, candidate eligibility and selection status |
+| Candidate map | Plot real predictions versus measured-neighbour similarity; filter measured, untested, excluded and proposed candidates | Prediction, similarity, endpoint, eligibility and selection status; uncertainty only if explicitly available |
 | Compound inspector | Show actual structure, calculated descriptors, nearest measured analogs and source measurements | RDKit structure depiction/descriptors; fingerprint similarity; provenance |
 | Ranked shortlist | Explain selection score and diversity contribution; allow exclusions and locked picks | Versioned acquisition configuration, scores, constraints and reason codes |
 | Batch-size and priority sliders | Preview an updated proposal from cached predictions | Reproducible selection job; no retraining on every slider change |
@@ -138,7 +250,7 @@ Important UI changes:
 
 - Label ensemble disagreement as such. “±1σ” is not automatically a calibrated confidence or prediction interval.
 - Display pIC50 only for a compatible IC50 regression task. Classification tasks display activity probability; other endpoints retain their correct names and units.
-- Keep the prototype’s activity/uncertainty scatterplot. A separate chemical-space view can use a projection, but clustering and diversity decisions must use original features, not 2D plot distances.
+- Keep the prototype’s visual layout, but default to prediction versus measured-neighbour similarity until useful uncertainty is validated. A separate chemical-space view can use a projection; clustering and diversity decisions must use original features, not 2D plot distances.
 - Generate rationale text from recorded facts and reason codes. Similarity and feature attribution are supporting evidence, not a verified mechanism of action.
 - Previewing a proposal does not commit a round. Store user overrides and compare the final chosen batch to the original recommendation.
 - Show stale-prediction, insufficient-data, invalid-structure, and out-of-domain states explicitly.
@@ -148,6 +260,8 @@ MVP workflow: create campaign → upload measurements and candidate structures �
 ## 3. Proposed stack and architecture
 
 Keep scientific logic in a reusable Python package that runs identically from the command line, benchmarks, and workers. The web app is an interface to that package.
+
+**Current prototype scope supersedes provisioning below:** use the existing Next.js frontend, a local FastAPI adapter, the working SQLite campaign store, and a local worker. The table below is a later shared-service option; Supabase, Modal, hosted authentication and paid infrastructure are not prerequisites. For structural/RAG additions and the scoped architecture, see [PRODUCT_EXTENSIONS.md](docs/PRODUCT_EXTENSIONS.md).
 
 | Layer | Proposed choice | Purpose |
 | --- | --- | --- |
@@ -378,15 +492,17 @@ The schedule assumes focused work and dataset availability. A negative model res
 
 ### First ten implementation tasks
 
-- [ ] Locate/import the intended frontend source and read its installed Next.js documentation.
+- [x] Locate the intended frontend at `../aster-hero` and inspect its prototype components.
+- [ ] Read relevant installed Next.js documentation when implementing integration.
 - [x] Select an assay and create a versioned dataset manifest.
-- [ ] Define molecule, assay, measurement, snapshot and model-run schemas.
-- [ ] Implement CSV validation, structure standardization and correct endpoint normalization.
+- [x] Define local molecule, assay, measurement, snapshot and model-run schemas.
+- [x] Implement CSV validation and structure canonicalization with explicit, already-normalized endpoint values.
+- [ ] Add reviewed raw-unit conversion and richer assay/replicate handling.
 - [x] Create duplicate-aware splits and hidden-label replay interfaces.
 - [x] Train the fingerprint baseline and reproduce its metrics from a saved configuration.
 - [x] Add frozen CheMeleon embeddings and a small prediction head.
 - [x] Run one controlled fine-tuning comparison.
-- [ ] Implement batch selection with exclusions, locks and diversity.
+- [x] Implement campaign exclusions/locks and evaluate diversity separately; greedy remains the default.
 - [ ] Feed real saved predictions into the prototype map, inspector and shortlist.
 
 ## 10. Papers and open-source study plan
@@ -430,7 +546,7 @@ Decisions to confirm before the relevant phase:
 1. Is the near-term goal a research portfolio/paper, a lab pilot, or commercial SaaS? Default: research MVP that can support a lab pilot.
 2. Is a particular target, assay, or collaborator available? Default: choose by public-data quality, then narrow with a partner.
 3. What GPU/cloud spending cap and weekly time budget apply? Default: local baseline work first; no paid run assumed.
-4. Where is the landing-page source that should be reused? The current checkout does not include it.
+4. Frontend location is resolved: reuse `../aster-hero`, with a working prototype rather than a full SaaS release first.
 5. Will private laboratory data enter the first release? Default: public data only until access controls and data-use agreements are ready.
 
 First complete deliverable: a reproducible public-data campaign with real model predictions, documented fine-tuning, an auditable recommended batch, and a second round that learns from revealed measurements. Its evaluation should explain where Aster helps, where it does not, and what remains unvalidated.

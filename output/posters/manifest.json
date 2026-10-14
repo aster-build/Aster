@@ -1,0 +1,365 @@
+{
+  "posters": [
+    {
+      "slug": "01-baseline",
+      "number": "01",
+      "title": "Can a simple model choose\nbetter experiments?",
+      "deck": "Aster begins with a real-data replay: predict activity, choose eight compounds, reveal their outcomes, and learn again.",
+      "stats": [
+        [
+          "36 / 40",
+          "HITS FOUND BY THE MODEL"
+        ],
+        [
+          "8.7 / 40",
+          "HITS FOUND AT RANDOM"
+        ],
+        [
+          "10",
+          "MATCHED STARTING SEEDS"
+        ]
+      ],
+      "chart_title": "SARS-CoV-2 Mpro \u00b7 discovery after 40 additional picks",
+      "labels": [
+        "Morgan + random forest",
+        "Random selection"
+      ],
+      "values": [
+        36.0,
+        8.7
+      ],
+      "colors": [
+        "#237A71",
+        "#A8B2AC"
+      ],
+      "axis": "Additional assay hits per 40 picks \u00b7 pIC50 \u2265 6",
+      "steps": [
+        [
+          "01 / CURATE",
+          "Real potency data",
+          "1,328 rows \u2192 922 eligible compounds; preserve the published train/test split."
+        ],
+        [
+          "02 / ENCODE",
+          "Morgan fingerprints",
+          "2,048 structural bits; radius 2; retain stereochemistry."
+        ],
+        [
+          "03 / PREDICT",
+          "Random forest",
+          "200 trees fit only the measurements revealed so far."
+        ],
+        [
+          "04 / REPEAT",
+          "Select \u2192 reveal \u2192 refit",
+          "100 initial results; five batches of eight; compare with random picks."
+        ]
+      ],
+      "evaluation": "712 compounds for training/acquisition; 210 held out for audit. Ten paired seeds, the same 40-pick budget, and hidden-label checks. This is a retrospective single-target experiment.",
+      "takeaway": "The baseline chose many more assay hits than random. Random had slightly lower audit error (0.748 vs 0.793): prediction accuracy and useful selection are different objectives.",
+      "sources": [
+        "[1] ASAP\u2013Polaris\u2013OpenADMET \u00b7 DOI 10.5281/zenodo.15582067",
+        "[2\u20133] RDKit + scikit-learn \u00b7 Morgan fingerprints and random forests"
+      ],
+      "note": "ASSAY HIT \u2260 A SAFE OR EFFECTIVE DRUG",
+      "report": "artifacts/baseline/REPORT.md"
+    },
+    {
+      "slug": "02-broader-evaluation",
+      "number": "02",
+      "title": "The harder test:\ndoes deep learning help?",
+      "deck": "Challenge the baseline with less starting data, unfamiliar chemical scaffolds, and frozen CheMeleon representations.",
+      "stats": [
+        [
+          "144",
+          "COMPLETED REPLAYS"
+        ],
+        [
+          "32 / 64",
+          "STARTING MEASUREMENTS"
+        ],
+        [
+          "12.75",
+          "BEST MEAN DISCOVERY COUNT"
+        ]
+      ],
+      "chart_title": "Two evaluation targets \u00b7 mean discovery after 40 picks",
+      "labels": [
+        "Morgan + ridge",
+        "Frozen CheMeleon + ridge",
+        "Morgan + random forest",
+        "Random selection"
+      ],
+      "values": [
+        12.75,
+        11.375,
+        11.291666666666666,
+        3.4166666666666665
+      ],
+      "colors": [
+        "#237A71",
+        "#536CAA",
+        "#60706B",
+        "#A8B2AC"
+      ],
+      "axis": "Compounds found from the pool\u2019s strongest 10% / 40 picks",
+      "steps": [
+        [
+          "01 / SPLIT",
+          "Development vs evaluation",
+          "One development target; two evaluation targets. Freeze rules first."
+        ],
+        [
+          "02 / COMPARE",
+          "Two feature systems",
+          "Morgan bits versus 2,048 frozen CheMeleon features."
+        ],
+        [
+          "03 / STRESS",
+          "Scaffold transfer",
+          "Separate starting chemistry, acquisition pool and audit scaffolds."
+        ],
+        [
+          "04 / SCORE",
+          "Discovery + error",
+          "Three seeds; two starting sizes; five batches of eight."
+        ]
+      ],
+      "evaluation": "Three tasks \u00d7 two protocols \u00d7 two starting sizes \u00d7 three seeds \u00d7 four arms = 144 replays. Chart uses androgen/glucocorticoid receptor tasks only; they share 133 molecular identities.",
+      "takeaway": "No clear overall neural advantage. CheMeleon also had severe prediction failures: mean final audit MAE 5.60. Investigate the head before adding complexity.",
+      "sources": [
+        "[4\u20135] MoleculeACE \u00b7 activity-cliff paper, DOI 10.1021/acs.jcim.2c01073",
+        "[6\u20138] CheMeleon \u00b7 arXiv:2506.15792 \u00b7 checkpoint + Chemprop",
+        "[2\u20133] RDKit + scikit-learn \u00b7 Aster replay protocol, not an official leaderboard"
+      ],
+      "note": "PRETRAINING OVERLAP UNRESOLVED \u00b7 NO UNIVERSAL WINNER",
+      "report": "artifacts/broader-v2/REPORT.md"
+    },
+    {
+      "slug": "03-stability-and-adaptation",
+      "number": "03",
+      "title": "Stable predictions.\nNo neural advantage yet.",
+      "deck": "Repair the prediction head on development data, freeze it, then test additional targets and a matched fine-tuning pilot.",
+      "stats": [
+        [
+          "0",
+          "REPAIRED-HEAD GUARD VIOLATIONS"
+        ],
+        [
+          "210",
+          "VALIDATED MAIN REPLAYS"
+        ],
+        [
+          "28",
+          "PASSING SOFTWARE TESTS"
+        ]
+      ],
+      "chart_title": "Three additional targets \u00b7 frozen-recipe evaluation",
+      "labels": [
+        "Morgan + ridge",
+        "Morgan + random forest",
+        "Stable frozen CheMeleon",
+        "Random selection"
+      ],
+      "values": [
+        18.666666666666668,
+        17.333333333333332,
+        15.5,
+        4.916666666666667
+      ],
+      "colors": [
+        "#237A71",
+        "#60706B",
+        "#536CAA",
+        "#A8B2AC"
+      ],
+      "axis": "Compounds found from the pool\u2019s strongest 10% / 40 picks",
+      "steps": [
+        [
+          "01 / ABLATE",
+          "Six head recipes",
+          "Compare centering, a variance floor, feature filtering and ridge strength."
+        ],
+        [
+          "02 / FREEZE",
+          "Filter + ridge",
+          "Drop observed feature SD <0.01; scale retained features; ridge \u03b1=10."
+        ],
+        [
+          "03 / TRANSFER",
+          "New targets",
+          "Serotonin 1A, GSK-3\u03b2 and CLK4; remove exposed-target overlaps."
+        ],
+        [
+          "04 / ADAPT",
+          "A bounded neural pilot",
+          "Five epochs per round on observed labels; refit the same ridge policy."
+        ]
+      ],
+      "evaluation": "108 development +96 fresh-target +6 tuned replays. Same starting measurements and 40-pick budgets within each comparison. Filters fit observed data only; no prediction clipping.",
+      "takeaway": "Matched six-case pilot: frozen 15.33 \u2192 tuned 13.67 discoveries. Four ties, two losses. Keep Morgan/ridge provisional; this specific adaptation recipe did not help.",
+      "sources": [
+        "[4\u20135] MoleculeACE \u00b7 fixed Ki tasks and scaffold tests",
+        "[6\u20138,11] CheMeleon + Chemprop + PyTorch \u00b7 pretrained encoder and custom adaptation",
+        "[2\u20133] RDKit + scikit-learn \u00b7 training-only transforms and ridge regression"
+      ],
+      "note": "STABILITY FIXED IN THESE TESTS \u00b7 FINE-TUNING RESULT IS A SMALL PILOT",
+      "report": "artifacts/transfer-tuned-v1/REPORT.md"
+    },
+    {
+      "slug": "04-reliability-and-selection",
+      "number": "04",
+      "title": "Which uncertainty signals\nactually help us choose?",
+      "deck": "Test disagreement, chemical novelty and batch diversity while keeping the same molecules, starting data and measurement budget.",
+      "stats": [
+        [
+          "252",
+          "VALIDATED REPLAYS"
+        ],
+        [
+          "34",
+          "PASSING SOFTWARE TESTS"
+        ],
+        [
+          "GREEDY",
+          "RETAINED PROVISIONAL DEFAULT"
+        ]
+      ],
+      "chart_title": "Three fresh targets \u00b7 frozen primary policy and controls",
+      "labels": [
+        "Greedy Morgan + ridge",
+        "Exploration \u00b7 primary test",
+        "Diversity \u00b7 secondary",
+        "Explore + diversity \u00b7 secondary",
+        "Cautious \u00b7 secondary",
+        "Morgan + random forest",
+        "Random selection"
+      ],
+      "values": [
+        14.291666666666666,
+        14.166666666666666,
+        15.125,
+        14.916666666666666,
+        14.208333333333334,
+        14.041666666666666,
+        3.4166666666666665
+      ],
+      "colors": [
+        "#237A71",
+        "#B56D3F",
+        "#536CAA",
+        "#536CAA",
+        "#60706B",
+        "#60706B",
+        "#A8B2AC"
+      ],
+      "axis": "Compounds found from the pool\u2019s strongest 10% / 40 picks",
+      "steps": [
+        [
+          "01 / PREDICT",
+          "Keep the reference",
+          "Morgan + ridge \u03b1=10; no neural tuning in this milestone."
+        ],
+        [
+          "02 / DIAGNOSE",
+          "Disagreement + novelty",
+          "16 bootstrap fits; nearest measured Tanimoto neighbor; CV residual bands."
+        ],
+        [
+          "03 / SELECT",
+          "Seven fixed policies",
+          "Greedy, explore, cautious, diverse, hybrid, forest and random."
+        ],
+        [
+          "04 / AUDIT",
+          "Freeze \u2192 transfer",
+          "84 development and 168 fresh-target replays; inspect exact score traces."
+        ]
+      ],
+      "evaluation": "Under greedy: disagreement error-AUC 0.477; novelty AUC 0.610 (chance =0.5). Nominal-80% bands covered 72.5%; sigma scaffold cases only 63.4%.",
+      "takeaway": "Exploration 14.17 vs greedy 14.29: no improvement. Diversity gained +0.83, below the +1 threshold. Novelty is a weak diagnostic; disagreement is not calibrated confidence.",
+      "sources": [
+        "[4\u20135] MoleculeACE \u00b7 dopamine transporter, sigma receptor 1 and PI3K\u03b1 tasks",
+        "[9] Efron (1979) \u00b7 bootstrap resampling \u00b7 DOI 10.1214/aos/1176344552",
+        "[2\u20133,10] RDKit + scikit-learn \u00b7 Tanimoto, ridge, CV and audit metrics"
+      ],
+      "note": "SECONDARY DIVERSITY SIGNAL IS EXPLORATORY \u00b7 NO PAID COMPUTE",
+      "report": "artifacts/reliability-v1/REPORT.md"
+    }
+  ],
+  "sources": [
+    [
+      "ASAP\u2013Polaris\u2013OpenADMET dataset",
+      "https://doi.org/10.5281/zenodo.15582067",
+      "Experimental potency source for milestone 1."
+    ],
+    [
+      "RDKit",
+      "https://www.rdkit.org/docs/GettingStartedInPython.html",
+      "Structure parsing, Morgan fingerprints and scaffold identities; reused throughout."
+    ],
+    [
+      "scikit-learn",
+      "https://scikit-learn.org/stable/",
+      "Random forests, ridge regression, preprocessing, CV and evaluation metrics."
+    ],
+    [
+      "MoleculeACE: paper and benchmark",
+      "https://doi.org/10.1021/acs.jcim.2c01073",
+      "van Tilborg et al.: activity-cliff benchmark; source data for milestones 2\u20134."
+    ],
+    [
+      "MoleculeACE source revision",
+      "https://github.com/molML/MoleculeACE/tree/7e6de0bd2968c56589c580f2a397f01c531ede26/MoleculeACE/Data/benchmark_data",
+      "Exact pinned data revision; Aster uses its own acquisition protocol."
+    ],
+    [
+      "CheMeleon research paper",
+      "https://arxiv.org/abs/2506.15792",
+      "Burns et al., Deep Learning Foundation Models from Classical Molecular Descriptors."
+    ],
+    [
+      "CheMeleon checkpoint",
+      "https://zenodo.org/records/15460715",
+      "Frozen pretrained encoder for milestones 2\u20133; checksum verified."
+    ],
+    [
+      "Chemprop foundation-model API",
+      "https://chemprop.readthedocs.io/en/main/chemeleon_foundation_finetuning.html",
+      "BondMessagePassing and MeanAggregation; custom observed-only adaptation in milestone 3."
+    ],
+    [
+      "Efron: Bootstrap Methods (1979)",
+      "https://doi.org/10.1214/aos/1176344552",
+      "Bootstrap resampling foundation; not a confidence guarantee for Aster disagreement."
+    ],
+    [
+      "Cross-validated predictions",
+      "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_val_predict.html",
+      "Background for training-only out-of-fold residual diagnostics in milestone 4."
+    ],
+    [
+      "PyTorch",
+      "https://pytorch.org/docs/stable/index.html",
+      "Tensor execution and observed-only encoder optimization in milestones 2\u20133."
+    ]
+  ],
+  "input_sha256": {
+    "artifacts/baseline/summary.json": "456c16de49001b13428abaf026f7128b2f4ba2fe72aafa5a52b03efd3724ffbc",
+    "artifacts/broader-v2/final_metrics.csv": "167a5c14c9a7f5319358ee80a1087e7c25467036e4001f463ed92cd7d328d065",
+    "artifacts/stability-v1/head_summary.csv": "75fb859f6e749aa140f43527e62c55e05e23e08c39766b89129d56f832198ca7",
+    "artifacts/transfer-v1/metrics.csv": "f54a53b3a563a388f17f96f932b489a0394f03549a071cf96a8dcf1093ac5a81",
+    "artifacts/transfer-tuned-v1/matched_metrics.csv": "f0d16c1a3555bee00149223fc8965b4a255d4e476f028907a447d7a7dd0ee421",
+    "artifacts/reliability-v1/final_metrics.csv": "7269800335205111525d1169e676dd252b332975b62d730ac0da22225b7aad27",
+    "artifacts/reliability-v1/reliability_summary.csv": "b2f35502f1a9e645de608f24cb725d056e75a8c55350c5f8f55e1518484f8764",
+    "artifacts/reliability-v1/decision.json": "6b8e879e62568e0d786c4a771f61f620bae5ba95b13fc35caa0b9c77a9704c36"
+  },
+  "rendering": "Matplotlib Agg; exact data charts; editable text in SVG; 2400\u00d73200 PNG",
+  "illustration": "Separate built-in image generation; see approach-image-prompt.txt; conceptual diagram, not raw data.",
+  "illustration_sha256": "1ad9be315634dc7bcd682bc4363c4cfb3abeea42e9c20fa6b4319de42c34e3d9",
+  "illustration_generation": "Built-in image_gen; initial generation followed by one targeted scientific-label correction.",
+  "prompt_files": [
+    "approach-image-prompt.txt",
+    "approach-image-edit-prompt.txt"
+  ]
+}

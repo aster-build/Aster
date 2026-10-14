@@ -1,0 +1,26 @@
+Use case: scientific-educational. Asset: a polished landscape research infographic for Aster, a molecular experiment-selection project. Create a crisp, spacious diagram with very legible English labels, warm ivory background, dark ink typography, teal and muted blue scientific diagrams, restrained orange accents. Stylized molecular graphs are schematic, not specific chemical compounds. No invented data, endorsements, clinical imagery or lab-success claims.
+
+Title: "ASTER — CHOOSING WHAT TO MEASURE NEXT"
+Subtitle: "Current work: reliability-aware selection. No neural tuning in this milestone."
+
+Main left-to-right loop, each node with a clear illustration and short label:
+1. "Known measurements" — a small table of molecular structures and measured activity. A separate nearby stack is labeled "Unmeasured candidates".
+2. "Morgan fingerprints" — binary feature vectors made from molecular structural patterns.
+3. "Morgan + ridge" — a compact regression module, clearly the main predictor. Small label "Predict activity". Beside it are two diagnostic modules: "16 bootstrap fits" with label "Disagreement proxy" and "Nearest measured neighbor" with label "Chemical novelty". These are diagnostic signals, not calibrated confidence.
+4. "Choose a batch of 8" — show eight small numbered candidate tiles. Strong main label "Default: highest predicted activity". Small experimental branch, visually secondary: "Tested: activity + 0.5 × disagreement" and "Diversity penalty".
+5. "Reveal outcomes → refit" — a loop arrow returning observed measurements to the regression fitting step. Label "Repeat for 5 rounds".
+
+Separate bottom evidence strip with exactly these three concise facts:
+"Greedy: 14.29 / 40"
+"Exploration: 14.17 / 40"
+"Result: retain greedy as the provisional default"
+Label this strip "Mean top-decile discoveries on 3 fresh targets". These are retrospective benchmark outcomes, not medicines discovered.
+
+Small gray historical inset, visually distinct from current workflow:
+"Earlier milestone: CheMeleon"
+"Frozen features vs 5-epoch fine-tuning"
+"No improvement in that small pilot"
+
+Footer: "Retrospective evaluation. Audit outcomes never enter training or selection. Disagreement is not calibrated confidence."
+
+Keep the flow easy to understand. Prioritize readable labels over decoration. Do not imply the main model is a neural network. Do not imply uncertainty exploration improved discovery. The main learning loop must train only from known measurements; never draw an arrow from hidden audit outcomes into the model.

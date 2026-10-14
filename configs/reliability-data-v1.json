@@ -1,0 +1,83 @@
+{
+  "version": "reliability-data-v1",
+  "source_revision": "7e6de0bd2968c56589c580f2a397f01c531ede26",
+  "tasks": [
+    {
+      "id": "CHEMBL1862_Ki",
+      "role": "development",
+      "sha256": "c69adcbb021591ba2c564df1e9eb55d465b3c51e78d0237ec0527942eb20cfdb"
+    },
+    {
+      "id": "CHEMBL1871_Ki",
+      "role": "development",
+      "sha256": "49d7f824fdbbc1c87fc69e239934558ac7e8612ca4c7e034314600b0b7c51821"
+    },
+    {
+      "id": "CHEMBL2034_Ki",
+      "role": "development",
+      "sha256": "9b9f4cca381cfd9e240603b0af24d9de742e421b984daf08c7c2458132eb3e4b"
+    },
+    {
+      "id": "CHEMBL214_Ki",
+      "role": "development",
+      "name": "5-hydroxytryptamine receptor 1A",
+      "sha256": "6d412099986b7b9769d878a6fd9a6cf137f257455a87610a4f35b00daa86758f"
+    },
+    {
+      "id": "CHEMBL262_Ki",
+      "role": "development",
+      "name": "Glycogen synthase kinase-3 beta",
+      "sha256": "8b6df9f67a87855d4fda89d1bd977cf2f3b71327387d2e0ba6c8673640fb94dd"
+    },
+    {
+      "id": "CHEMBL4203_Ki",
+      "role": "development",
+      "name": "Dual specificity protein kinase CLK4",
+      "sha256": "f056efe7d24b98b789281ec07adb7a0118683ba5d8833c9fa296ddf8b438e3b2"
+    },
+    {
+      "id": "CHEMBL238_Ki",
+      "role": "evaluation",
+      "name": "Sodium-dependent dopamine transporter",
+      "sha256": "305d33df171e112c1cd75855c12377b0096e4e3726b910339169b1ab982a2c05"
+    },
+    {
+      "id": "CHEMBL287_Ki",
+      "role": "evaluation",
+      "name": "Sigma non-opioid intracellular receptor 1",
+      "sha256": "e857875848bb64dc6e327e6c42fe9fd36526bbee1b976de4521b55c4c6629894"
+    },
+    {
+      "id": "CHEMBL4005_Ki",
+      "role": "evaluation",
+      "name": "Phosphatidylinositol 4,5-bisphosphate 3-kinase catalytic subunit alpha isoform",
+      "sha256": "1483dad125d5d37719c5524d6b63bac93be6e7114f892a0d131ebc35f72632f7"
+    }
+  ],
+  "support_sizes": [
+    32,
+    64
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "protocols": [
+    "published",
+    "scaffold_transfer"
+  ],
+  "rounds": 5,
+  "batch_size": 8,
+  "hit_threshold": 7.0,
+  "trees": 200,
+  "ridge_alpha": 10.0,
+  "scaffold_fractions": [
+    0.2,
+    0.6,
+    0.2
+  ],
+  "checkpoint_sha256": "c376624d3407204e780a0ed13a9ac097cc9bb1c13ef89cdbc633c1715c183651",
+  "primary_metric": "pool_top_decile_recovery; 90th percentile inclusive; evaluator only",
+  "development_revision_reason": "All six previously inspected targets are exposed; exclude their identities from predeclared new evaluation targets. Selection policy frozen before downloading new outcome data.",
+  "selection_basis": "Target identities fixed before development runs: dopamine transporter, sigma receptor 1 and PI3K alpha broaden target functions. No new-target performance used to select tasks."
+}

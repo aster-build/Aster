@@ -1,0 +1,45 @@
+{
+  "version": "reliability-v1",
+  "development_prepared": "artifacts/broader-v2-prepared",
+  "development_tasks": ["CHEMBL1862_Ki", "CHEMBL1871_Ki", "CHEMBL2034_Ki"],
+  "development_support_sizes": [32],
+  "evaluation_targets": ["CHEMBL238_Ki", "CHEMBL287_Ki", "CHEMBL4005_Ki"],
+  "selection_basis": "Target identities fixed before development runs: dopamine transporter, sigma receptor 1 and PI3K alpha broaden target functions. No new-target performance used to select tasks.",
+  "evaluation_support_sizes": [32, 64],
+  "protocols": ["published", "scaffold_transfer"],
+  "seeds": [0, 1],
+  "rounds": 5,
+  "batch_size": 8,
+  "ridge_alpha": 10.0,
+  "forest_trees": 200,
+  "bootstrap_members": 16,
+  "cv_folds": 3,
+  "nominal_interval_coverage": 0.8,
+  "large_error_threshold_pki": 1.0,
+  "hit_threshold_pki": 7.0,
+  "prediction_guard": [0.0, 14.0],
+  "policies": [
+    {"id": "greedy", "uncertainty_weight": 0.0, "diversity_weight": 0.0},
+    {"id": "diverse", "uncertainty_weight": 0.0, "diversity_weight": 0.5},
+    {"id": "explore", "uncertainty_weight": 0.5, "diversity_weight": 0.0},
+    {"id": "explore_diverse", "uncertainty_weight": 0.5, "diversity_weight": 0.5},
+    {"id": "cautious", "uncertainty_weight": -1.0, "diversity_weight": 0.0},
+    {"id": "random", "uncertainty_weight": 0.0, "diversity_weight": 0.0},
+    {"id": "morgan_rf", "uncertainty_weight": 0.0, "diversity_weight": 0.0}
+  ],
+  "promotion_gate": {
+    "mean_top_decile_gain_min": 1.0,
+    "worst_target_mean_gain_min": -1.0,
+    "mean_final_audit_mae_max": 1.25,
+    "outside_guard_max": 0,
+    "tie_break": "Highest mean final discovery gain, then lowest mean final audit MAE, then policy ID. Freeze greedy if no challenger passes."
+  },
+  "reliability_gate": {
+    "mean_large_error_auc_min": 0.6,
+    "mean_error_spearman_min": 0.2,
+    "interval_coverage_tolerance": 0.1,
+    "meaning": "Descriptive screening only, using equal-weight case/round summaries; no target-level significance claim. OOF residual bands have no formal coverage guarantee under adaptive selection or scaffold shift."
+  },
+  "primary_metric": "Final strongest-decile pool discoveries per 40 picks; threshold evaluator-only after replay",
+  "interval_method": "Training-only shuffled three-fold out-of-fold absolute residual 80th percentile (higher interpolation), symmetric band around full observed-data fit. Empirical diagnostic, not a conformal guarantee."
+}

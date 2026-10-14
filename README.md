@@ -1,9 +1,26 @@
 # Aster
 
 A reproducible scientific backend for choosing which compounds to test next.
-This first milestone uses real ASAP–Polaris–OpenADMET SARS-CoV-2 Mpro potency
-measurements to compare random-forest-guided selection with random selection.
+The research milestones compare molecular predictors and batch-selection policies.
+A local campaign workflow now supports CSV imports, saved Morgan/ridge proposals,
+constraints, result imports, and subsequent rounds.
 The landing-page frontend lives separately in `../aster-hero`; it is not connected yet.
+
+## Use the campaign workflow
+
+The newest milestone is a persistent local campaign, using greedy Morgan + ridge
+as the provisional default. See [the workflow guide](docs/CAMPAIGN_WORKFLOW.md)
+for CSV schemas, commands, constraints, and recovery behavior.
+
+```sh
+.venv/bin/python -m aster.campaign --help
+.venv/bin/python scripts/demo_campaign.py
+```
+
+The demo uses the already prepared public dataset and writes a fresh directory at
+`artifacts/campaign-demo-v1`. It verifies two batches of eight, with 32 → 40 → 48
+measurements, without treating the workflow check as a new model-quality result.
+The landing-page dashboard is still separate; this milestone supplies its campaign backend.
 
 ## Run it
 
@@ -146,6 +163,29 @@ are no longer fresh blind benchmarks for future recipe selection.
 
 See [ROADMAP.md](ROADMAP.md) for the architecture, fine-tuning plan and later product integration.
 
+## Reliability-aware selection and milestone posters
+
+The first policy/reliability comparison is complete: 252 validated replays and
+34 passing tests. The frozen exploration policy found 14.17 top-decile compounds
+per 40 picks versus greedy Morgan/ridge 14.29 on three fresh targets. Bootstrap
+disagreement did not reliably identify larger errors; chemical novelty had only
+modest diagnostic value. Keep greedy as the provisional default.
+
+See [findings](docs/RELIABILITY_RESULTS.md), [protocol and commands](docs/RELIABILITY_PROTOCOL.md),
+and `artifacts/reliability-v1/REPORT.md`. Historical selection explanations are in
+`artifacts/reliability-v1/recommendation_trace.csv`.
+
+Four milestone posters (high-resolution PNG and scalable SVG), a current-workflow
+illustration, source references, and generation prompts are in
+[the poster gallery](output/posters/index.html). Rebuild the data-driven posters with:
+
+```sh
+MPLCONFIGDIR=.mplconfig .venv/bin/python scripts/build_milestone_posters.py
+```
+
+The latest approach is reliability-aware experiment selection; neural fine-tuning
+was the preceding milestone. A thin campaign/dashboard workflow is next.
+
 ## Source and attribution
 
 Scheen, J., MacDermott-Opeskin, H., Chodera, J., et al. (2025).
@@ -158,3 +198,10 @@ canonicalized derivative of the published potency table; modifications are recor
 Scientific software: [RDKit](https://github.com/rdkit/rdkit) and
 [scikit-learn](https://scikit-learn.org/stable/). Neural comparison:
 [Chemprop](https://github.com/chemprop/chemprop) and [CheMeleon](https://github.com/chrissly31415/chemeleon).
+
+## Planned prototype extensions
+
+The next step connects the existing landing-page dashboard to this backend.
+The [extension plan](docs/PRODUCT_EXTENSIONS.md) scopes later 3D protein–ligand
+evidence, compound-aware literature retrieval, and a controlled experiment to test
+whether external evidence improves selection. These are proposals, not implemented features.

@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="864pt" height="1152pt" viewBox="0 0 864 1152" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-13T18:13:56.180437</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 1152 
+L 864 1152 
+L 864 0 
+L 0 0 
+z
+" style="fill: #f6f3ea"/>
+  </g>
+  <g id="patch_2">
+   <path d="M 56.16 837.504 
+L 229.824 837.504 
+Q 236.736 837.504 236.736 828.288 
+L 236.736 709.632 
+Q 236.736 700.416 229.824 700.416 
+L 56.16 700.416 
+Q 49.248 700.416 49.248 709.632 
+L 49.248 828.288 
+Q 49.248 837.504 56.16 837.504 
+z
+" style="fill: #ecefe6; stroke: #d7ddd2; stroke-width: 0.6; stroke-linejoin: miter"/>
+  </g>
+  <g id="patch_3">
+   <path d="M 249.696 837.504 
+L 423.36 837.504 
+Q 430.272 837.504 430.272 828.288 
+L 430.272 709.632 
+Q 430.272 700.416 423.36 700.416 
+L 249.696 700.416 
+Q 242.784 700.416 242.784 709.632 
+L 242.784 828.288 
+Q 242.784 837.504 249.696 837.504 
+z
+" style="fill: #ecefe6; stroke: #d7ddd2; stroke-width: 0.6; stroke-linejoin: miter"/>
+  </g>
+  <g id="patch_4">
+   <path d="M 443.232 837.504 
+L 616.896 837.504 
+Q 623.808 837.504 623.808 828.288 
+L 623.808 709.632 
+Q 623.808 700.416 616.896 700.416 
+L 443.232 700.416 
+Q 436.32 700.416 436.32 709.632 
+L 436.32 828.288 
+Q 436.32 837.504 443.232 837.504 
+z
+" style="fill: #ecefe6; stroke: #d7ddd2; stroke-width: 0.6; stroke-linejoin: miter"/>
+  </g>
+  <g id="patch_5">
+   <path d="M 636.768 837.504 
+L 810.432 837.504 
+Q 817.344 837.504 817.344 828.288 
+L 817.344 709.632 
+Q 817.344 700.416 810.432 700.416 
+L 636.768 700.416 
+Q 629.856 700.416 629.856 709.632 
+L 629.856 828.288 
+Q 629.856 837.504 636.768 837.504 
+z
+" style="fill: #ecefe6; stroke: #d7ddd2; stroke-width: 0.6; stroke-linejoin: miter"/>
+  </g>
+  <g id="patch_6">
+   <path d="M 56.16 1005.696 
+L 418.176 1005.696 
+Q 425.088 1005.696 425.088 996.48 
+L 425.088 859.392 
+Q 425.088 850.176 418.176 850.176 
+L 56.16 850.176 
+Q 49.248 850.176 49.248 859.392 
+L 49.248 996.48 
+Q 49.248 1005.696 56.16 1005.696 
+z
+" style="fill: #f0eee4; stroke: #d7ddd2; stroke-width: 0.6; stroke-linejoin: miter"/>
+  </g>
+  <g id="patch_7">
+   <path d="M 444.96 1005.696 
+L 806.976 1005.696 
+Q 813.888 1005.696 813.888 996.48 
+L 813.888 859.392 
+Q 813.888 850.176 806.976 850.176 
+L 444.96 850.176 
+Q 438.048 850.176 438.048 859.392 
+L 438.048 996.48 
+Q 438.048 1005.696 444.96 1005.696 
+z
+" style="fill: #f0eee4; stroke: #d7ddd2; stroke-width: 0.6; stroke-linejoin: miter"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_8">
+    <path d="M 254.88 618.624 
+L 803.52 618.624 
+L 803.52 418.176 
+L 254.88 418.176 
+z
+" style="fill: #f6f3ea"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 254.88 618.624 
+L 254.88 418.176 
+" clip-path="url(#p715c5b4970)" style="fill: none; stroke: #dce0d7; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2"/>
+     <g id="text_1">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #60706b" x="254.88" y="629.721656" transform="rotate(-0 254.88 629.721656)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 392.04 618.624 
+L 392.04 418.176 
+" clip-path="url(#p715c5b4970)" style="fill: none; stroke: #dce0d7; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4"/>
+     <g id="text_2">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #60706b" x="392.04" y="629.721656" transform="rotate(-0 392.04 629.721656)">10</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 529.2 618.624 
+L 529.2 418.176 
+" clip-path="url(#p715c5b4970)" style="fill: none; stroke: #dce0d7; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_3">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #60706b" x="529.2" y="629.721656" transform="rotate(-0 529.2 629.721656)">20</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 666.36 618.624 
+L 666.36 418.176 
+" clip-path="url(#p715c5b4970)" style="fill: none; stroke: #dce0d7; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_4">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #60706b" x="666.36" y="629.721656" transform="rotate(-0 666.36 629.721656)">30</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 803.52 618.624 
+L 803.52 418.176 
+" clip-path="url(#p715c5b4970)" style="fill: none; stroke: #dce0d7; stroke-width: 0.6; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_5">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #60706b" x="803.52" y="629.721656" transform="rotate(-0 803.52 629.721656)">40</text>
+     </g>
+    </g>
+    <g id="text_6">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #60706b" x="529.2" y="649.722438" transform="rotate(-0 529.2 649.722438)">Additional assay hits per 40 picks · pIC50 ≥ 6</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_11"/>
+     <g id="text_7">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #60706b" x="251.38" y="465.956795" transform="rotate(-0 251.38 465.956795)">Morgan + random forest</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_12"/>
+     <g id="text_8">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #60706b" x="251.38" y="578.441643" transform="rotate(-0 251.38 578.441643)">Random selection</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_9">
+    <path d="M 254.88 427.287273 
+L 748.656 427.287273 
+L 748.656 497.027879 
+L 254.88 497.027879 
+z
+" clip-path="url(#p715c5b4970)" style="fill: #237a71"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 254.88 539.772121 
+L 374.2092 539.772121 
+L 374.2092 609.512727 
+L 254.88 609.512727 
+z
+" clip-path="url(#p715c5b4970)" style="fill: #a8b2ac"/>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="754.8282" y="465.014998" transform="rotate(-0 754.8282 465.014998)">36</text>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="380.3814" y="577.499846" transform="rotate(-0 380.3814 577.499846)">8.7</text>
+   </g>
+  </g>
+  <g id="patch_11">
+   <path d="M 234.418852 769.536 
+Q 238.898282 769.536 242.259677 769.536 
+" style="fill: none; stroke: #237a71; stroke-linecap: round"/>
+   <path d="M 238.659677 767.736 
+L 242.259677 769.536 
+L 238.659677 771.336 
+z
+" style="fill: #237a71; stroke: #237a71; stroke-linecap: round"/>
+  </g>
+  <g id="patch_12">
+   <path d="M 427.954852 769.536 
+Q 432.434282 769.536 435.795677 769.536 
+" style="fill: none; stroke: #237a71; stroke-linecap: round"/>
+   <path d="M 432.195677 767.736 
+L 435.795677 769.536 
+L 432.195677 771.336 
+z
+" style="fill: #237a71; stroke: #237a71; stroke-linecap: round"/>
+  </g>
+  <g id="patch_13">
+   <path d="M 621.490852 769.536 
+Q 625.970282 769.536 629.331677 769.536 
+" style="fill: none; stroke: #237a71; stroke-linecap: round"/>
+   <path d="M 625.731677 767.736 
+L 629.331677 769.536 
+L 625.731677 771.336 
+z
+" style="fill: #237a71; stroke: #237a71; stroke-linecap: round"/>
+  </g>
+  <g id="text_11">
+   <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="56.16" y="49.536" transform="rotate(-0 56.16 49.536)">ASTER  /  RESEARCH NOTES</text>
+  </g>
+  <g id="text_12">
+   <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #237a71" x="807.84" y="49.536" transform="rotate(-0 807.84 49.536)">MILESTONE 01</text>
+  </g>
+  <g id="text_13">
+   <text style="font-weight: 700; font-size: 33px; font-family: 'DejaVu Serif'; fill: #143d3c" transform="translate(56.16 125.175938)">Can a simple model choose</text>
+   <text style="font-weight: 700; font-size: 33px; font-family: 'DejaVu Serif'; fill: #143d3c" transform="translate(56.16 161.475938)">better experiments?</text>
+  </g>
+  <g id="text_14">
+   <text style="font-size: 12.3px; font-family: 'DejaVu Sans'; fill: #60706b" transform="translate(56.16 240.223031)">Aster begins with a real-data replay: predict activity, choose eight compounds, reveal their</text>
+   <text style="font-size: 12.3px; font-family: 'DejaVu Sans'; fill: #60706b" transform="translate(56.16 257.689031)">outcomes, and learn again.</text>
+  </g>
+  <g id="text_15">
+   <text style="font-weight: 700; font-size: 24px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="56.16" y="305.28" transform="rotate(-0 56.16 305.28)">36 / 40</text>
+  </g>
+  <g id="text_16">
+   <text style="font-size: 9.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #60706b" x="56.16" y="336.384" transform="rotate(-0 56.16 336.384)">HITS FOUND BY THE MODEL</text>
+  </g>
+  <g id="text_17">
+   <text style="font-weight: 700; font-size: 24px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="311.04" y="305.28" transform="rotate(-0 311.04 305.28)">8.7 / 40</text>
+  </g>
+  <g id="text_18">
+   <text style="font-size: 9.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #60706b" x="311.04" y="336.384" transform="rotate(-0 311.04 336.384)">HITS FOUND AT RANDOM</text>
+  </g>
+  <g id="text_19">
+   <text style="font-weight: 700; font-size: 27px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="565.92" y="305.28" transform="rotate(-0 565.92 305.28)">10</text>
+  </g>
+  <g id="text_20">
+   <text style="font-size: 9.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #60706b" x="565.92" y="336.384" transform="rotate(-0 565.92 336.384)">MATCHED STARTING SEEDS</text>
+  </g>
+  <g id="text_21">
+   <text style="font-weight: 700; font-size: 13px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="56.16" y="385.92" transform="rotate(-0 56.16 385.92)">SARS-CoV-2 Mpro · discovery after 40 additional picks</text>
+  </g>
+  <g id="text_22">
+   <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="56.16" y="686.592" transform="rotate(-0 56.16 686.592)">APPROACH  /  THE LEARNING LOOP</text>
+  </g>
+  <g id="text_23">
+   <text style="font-weight: 700; font-size: 8.8px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="63.072" y="726.912" transform="rotate(-0 63.072 726.912)">01 / CURATE</text>
+  </g>
+  <g id="text_24">
+   <text style="font-weight: 700; font-size: 10.1px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="63.072" y="752.256" transform="rotate(-0 63.072 752.256)">Real potency data</text>
+  </g>
+  <g id="text_25">
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(63.072 783.609)">1,328 rows → 922 eligible</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(63.072 797.241)">compounds; preserve the</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(63.072 810.873)">published train/test split.</text>
+  </g>
+  <g id="text_26">
+   <text style="font-weight: 700; font-size: 8.8px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="256.608" y="726.912" transform="rotate(-0 256.608 726.912)">02 / ENCODE</text>
+  </g>
+  <g id="text_27">
+   <text style="font-weight: 700; font-size: 10.1px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="256.608" y="752.256" transform="rotate(-0 256.608 752.256)">Morgan fingerprints</text>
+  </g>
+  <g id="text_28">
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(256.608 784.04925)">2,048 structural bits;</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(256.608 797.68125)">radius 2; retain</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(256.608 810.873)">stereochemistry.</text>
+  </g>
+  <g id="text_29">
+   <text style="font-weight: 700; font-size: 8.8px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="450.144" y="726.912" transform="rotate(-0 450.144 726.912)">03 / PREDICT</text>
+  </g>
+  <g id="text_30">
+   <text style="font-weight: 700; font-size: 10.1px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="450.144" y="752.256" transform="rotate(-0 450.144 752.256)">Random forest</text>
+  </g>
+  <g id="text_31">
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(450.144 783.609)">200 trees fit only the</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(450.144 798.171)">measurements revealed so</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(450.144 811.803)">far.</text>
+  </g>
+  <g id="text_32">
+   <text style="font-weight: 700; font-size: 8.8px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="643.68" y="726.912" transform="rotate(-0 643.68 726.912)">04 / REPEAT</text>
+  </g>
+  <g id="text_33">
+   <text style="font-weight: 700; font-size: 10.1px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #143d3c" x="643.68" y="752.256" transform="rotate(-0 643.68 752.256)">Select → reveal → refit</text>
+  </g>
+  <g id="text_34">
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(643.68 784.04925)">100 initial results; five</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(643.68 797.241)">batches of eight; compare</text>
+   <text style="font-size: 9.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(643.68 810.873)">with random picks.</text>
+  </g>
+  <g id="text_35">
+   <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="64.8" y="878.976" transform="rotate(-0 64.8 878.976)">EVALUATION</text>
+  </g>
+  <g id="text_36">
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(64.8 912.466937)">712 compounds for training/acquisition; 210 held out</text>
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(64.8 927.518937)">for audit. Ten paired seeds, the same 40-pick budget,</text>
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(64.8 942.570938)">and hidden-label checks. This is a retrospective</text>
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(64.8 957.622938)">single-target experiment.</text>
+  </g>
+  <g id="text_37">
+   <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="453.6" y="878.976" transform="rotate(-0 453.6 878.976)">WHAT WE LEARNED</text>
+  </g>
+  <g id="text_38">
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(453.6 912.466937)">The baseline chose many more assay hits than random.</text>
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(453.6 927.518937)">Random had slightly lower audit error (0.748 vs 0.793):</text>
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(453.6 942.570938)">prediction accuracy and useful selection are different</text>
+   <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #143d3c" transform="translate(453.6 957.622938)">objectives.</text>
+  </g>
+  <g id="text_39">
+   <text style="font-weight: 700; font-size: 9.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="56.16" y="1022.976" transform="rotate(-0 56.16 1022.976)">METHODS, RESEARCH &amp; OPEN SOURCE</text>
+  </g>
+  <g id="text_40">
+   <text style="font-size: 9.1px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #60706b" x="56.16" y="1046.016" transform="rotate(-0 56.16 1046.016)">[1] ASAP–Polaris–OpenADMET · DOI 10.5281/zenodo.15582067</text>
+  </g>
+  <g id="text_41">
+   <text style="font-size: 9.1px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #60706b" x="56.16" y="1062.144" transform="rotate(-0 56.16 1062.144)">[2–3] RDKit + scikit-learn · Morgan fingerprints and random forests</text>
+  </g>
+  <g id="text_42">
+   <text style="font-size: 8.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #60706b" x="56.16" y="1111.68" transform="rotate(-0 56.16 1111.68)">Numbered references and source links: SOURCES.md · Full methods and limitations in the linked report.</text>
+  </g>
+  <g id="text_43">
+   <text style="font-weight: 700; font-size: 8.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237a71" x="56.16" y="1130.112" transform="rotate(-0 56.16 1130.112)">ASSAY HIT ≠ A SAFE OR EFFECTIVE DRUG</text>
+  </g>
+  <g id="text_44">
+   <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #60706b" x="807.84" y="1130.112" transform="rotate(-0 807.84 1130.112)">ASTER / PUBLIC-DATA RESEARCH</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p715c5b4970">
+   <rect x="254.88" y="418.176" width="548.64" height="200.448"/>
+  </clipPath>
+ </defs>
+</svg>
