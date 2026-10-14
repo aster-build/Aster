@@ -1,0 +1,15 @@
+{
+  "purpose": "Retrospective public-data workflow demonstration, not a new evaluation",
+  "upstream": "https://github.com/molML/MoleculeACE/tree/7e6de0bd2968c56589c580f2a397f01c531ede26",
+  "task": "CHEMBL238_Ki",
+  "partition": "published train only",
+  "initial": 32,
+  "candidates": 128,
+  "seed": 0,
+  "curated_source_sha256": "afd41130f62d97bf9c09ff9c881355cbccf6d1004ec8a1f4acb0189b7a05c7f9",
+  "files": {
+    "candidates.csv": "20dbedcba86cf9f5a48bb87ad4b1bac6129fd4ae6019e5f0c56446f418bf2c45",
+    "measured.csv": "9d2773b6b12135009a7aa897bf40c0b39e95467abcee1e07b7e75b1185ca64d5",
+    "outcomes.csv": "2989f81c40eaa07b182498bec76c951c1a8abebfe752eed35ec48f0a0426a004"
+  }
+}

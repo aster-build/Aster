@@ -4,7 +4,23 @@ A reproducible scientific backend for choosing which compounds to test next.
 The research milestones compare molecular predictors and batch-selection policies.
 A local campaign workflow now supports CSV imports, saved Morgan/ridge proposals,
 constraints, result imports, and subsequent rounds.
-The landing-page frontend lives separately in `../aster-hero`; it is not connected yet.
+The existing prototype has been imported into `apps/web/`; its `/dashboard` route
+now connects to the Python campaign backend. The original `../aster-hero` project is unchanged.
+
+## Open the connected dashboard
+
+```sh
+.venv/bin/python -m pip install -e '.[web]'
+npm --prefix apps/web ci
+.venv/bin/python scripts/dev_dashboard.py
+```
+
+Open **http://127.0.0.1:3000/dashboard**. Start a public-data replay or import
+measurement/candidate CSVs, preview and commit a batch, then import its outcomes.
+See [setup, architecture, and verification](docs/DASHBOARD.md).
+
+**Folder distinction:** the repository is named `aster`; its inner `aster/` directory
+is the Python backend package. `apps/web/` is the Next.js frontend.
 
 ## Use the campaign workflow
 
@@ -20,7 +36,7 @@ for CSV schemas, commands, constraints, and recovery behavior.
 The demo uses the already prepared public dataset and writes a fresh directory at
 `artifacts/campaign-demo-v1`. It verifies two batches of eight, with 32 → 40 → 48
 measurements, without treating the workflow check as a new model-quality result.
-The landing-page dashboard is still separate; this milestone supplies its campaign backend.
+The connected dashboard is now implemented in `apps/web/`; see the guide below.
 
 ## Run it
 
@@ -201,7 +217,7 @@ Scientific software: [RDKit](https://github.com/rdkit/rdkit) and
 
 ## Planned prototype extensions
 
-The next step connects the existing landing-page dashboard to this backend.
+The existing prototype is now connected locally to this backend.
 The [extension plan](docs/PRODUCT_EXTENSIONS.md) scopes later 3D protein–ligand
 evidence, compound-aware literature retrieval, and a controlled experiment to test
 whether external evidence improves selection. These are proposals, not implemented features.

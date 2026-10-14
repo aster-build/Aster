@@ -1,6 +1,6 @@
 # Aster roadmap
 
-Updated: 2026-10-13. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; integrate the existing prototype next. Structural evidence, literature RAG, and a controlled evidence-augmented selection study are proposed below.
+Updated: 2026-10-13. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; structural evidence is next. Structural evidence, literature RAG, and a controlled evidence-augmented selection study are proposed below.
 
 ### Implementation update — first milestone completed
 
@@ -125,14 +125,15 @@ Findings: [RELIABILITY_RESULTS.md](docs/RELIABILITY_RESULTS.md).
 - [x] Build a local campaign workflow: validated CSV import, a saved model/run,
   reproducible eight-compound proposal, exclusions/locked picks, export/import
   outcomes, and a second round.
-- [ ] Connect it to the dashboard using the current reference model and honest
+- [x] Connect it to the local dashboard using the current reference model and honest
   reliability labels.
 - [ ] Review that workflow with a discovery scientist. Reserve new targets or
   prospective measurements before testing any revised selection policy.
 
 You are entering Phase 4 (product integration). The first policy/reliability
 comparison and a local campaign workflow with locks/exclusions are complete.
-Dashboard integration, shared storage/authentication and background jobs remain unfinished.
+Local dashboard integration and restart-aware preview jobs are complete.
+Shared storage/authentication and distributed job infrastructure remain unfinished.
 The [milestone poster gallery](output/posters/index.html) explains all four completed
 scientific milestones, with PNG/SVG exports, sources and a current-workflow image.
 These are retrospective research results, not clinical claims.
@@ -155,42 +156,60 @@ These are retrospective research results, not clinical claims.
   The published Test partition is unused; this is workflow verification, not a
   fresh scientific evaluation. See `artifacts/campaign-demo-v1/REPORT.md`.
 - [x] Add 15 lifecycle/validation/concurrency/recovery tests; 49 total tests pass.
-- [ ] Connect the campaign operations to an import/review/results dashboard.
-- [ ] Add asynchronous jobs, authenticated shared access, and reviewed corrections
+- [x] Connect the campaign operations to an import/review/results dashboard.
+- [ ] Add distributed job infrastructure, authenticated shared access, and reviewed corrections
   before deployment or private lab data. Obtain domain feedback on the workflow.
 
 No neural retraining, new acquisition-policy promotion, or paid compute was needed.
 The prior four posters describe scientific results; this milestone adds workflow
 infrastructure rather than another claim of discovery performance.
 
-### Planned milestones 6–9 — prototype, structural evidence, and literature
+### Sixth milestone — connected local dashboard completed
+
+Guide: [DASHBOARD.md](docs/DASHBOARD.md). Frontend: `apps/web/`. API: `aster/api.py`.
+
+- [x] Import the existing landing-page design and add `/dashboard` using real campaign data.
+- [x] Add FastAPI routes, persisted preview job states, one local model worker and restart recovery.
+- [x] Separate preview from explicit commit; reject stale revisions and make commit retries idempotent.
+- [x] Connect the candidate map, shortlist, RDKit molecule inspector, analog evidence,
+  locks/exclusions, CSV campaign imports, batch exports, result imports and history.
+- [x] Verify a browser replay of two eight-compound rounds: 32 → 40 → 48 measurements,
+  plus reload persistence and a normal CSV campaign import. Inspect desktop/mobile layouts.
+- [x] Pass 54 Python tests and the Next.js production/TypeScript build.
+- [ ] Review the working prototype before adding the structural evidence inspector.
+
+This is a local prototype, not a public deployment or a new scientific benchmark.
+The separate original `aster-hero` project and Vercel landing deployment are unchanged.
+
+### Milestones 6–9 — integration status and proposed extensions
 
 Scope confirmed: reuse the prototype dashboard in `../aster-hero`; a full SaaS
 platform is not required for the next milestone. Inspected `ProductPreview.tsx`,
-`CandidateMap.tsx`, and `src/lib/data.ts`: the current interface runs on illustrative
-values and is not connected to the campaign database.
+`CandidateMap.tsx`, and `src/lib/data.ts`: the original landing preview runs on illustrative values. The imported
+`apps/web` project now includes a separate connected campaign route.
 
 Detailed brainstorming, stack, architecture, data contracts, prior work, sources,
 and evaluation gates: [PRODUCT_EXTENSIONS.md](docs/PRODUCT_EXTENSIONS.md).
-These additions are planned, not implemented or scientifically validated.
+Milestone 6 is implemented locally. Milestones 7–9 remain planned and are not
+scientifically validated.
 
 | Milestone | Scope and proposed stack | Exit gate |
 | --- | --- | --- |
-| 6. Connect the existing prototype | Existing Next.js/React/TypeScript UI → FastAPI/Pydantic → campaign package, SQLite, local worker; retain the visual design | Browser import → preview → commit eight picks → export → import results → round two, with saved state and real evidence |
+| 6. Connect the existing prototype — complete locally | Existing Next.js/React/TypeScript UI → FastAPI/Pydantic → campaign package, SQLite, local worker; retain the visual design | Browser import → preview → commit eight picks → export → import results → round two, with saved state and real evidence |
 | 7A. 3D structural evidence and decision inspector | Mol* viewer; RCSB experimental complexes; RDKit identity/analog mapping; PLIP contact annotations in a separate worker | Verified ligand/target/atom mapping, source-labelled structure, contact selection and nearest-measured evidence; no invented binding pose |
 | 7B. Optional predicted poses | AutoDock Vina pilot with recorded preparation, pocket and seeds | Predeclared pose-validation checks pass; predicted poses remain labelled and docking scores do not replace potency |
 | 8. Literature evidence RAG | Europe PMC permitted content + ChEMBL records; typed claims, entity resolution, lexical/dense retrieval; SQLite FTS5/NumPy initially, Postgres/pgvector when warranted | Reviewed retrieval/extraction/citation test set, contradiction handling and abstention; literature does not silently change model scores |
 | 9. Evidence-augmented selection research | Compare baseline, reviewed literature augmentation, structural features, and combined evidence; optional MoleculeSTM-style retrieval/fusion later | Frozen corpus and model, no hidden-label access, matched information/budgets, and additional-target evaluation before promotion |
 
-- [ ] Replace synthetic counts, compound IDs, rationale text and pIC50-only labels
+- [x] Replace synthetic counts, compound IDs, rationale text and pIC50-only labels
   with campaign data. Use eight picks by default and show the declared endpoint.
-- [ ] Replace illustrative confidence intervals and uncertainty-derived roles with
+- [x] Replace illustrative confidence intervals and uncertainty-derived roles with
   supported evidence. Prefer a prediction-versus-nearest-measured-similarity plot;
   similarity/novelty must not be called calibrated confidence.
-- [ ] Add separate non-mutating proposal previews and explicit commit, with stale
-  snapshot detection. Current CLI `propose` commits immediately.
-- [ ] Persist scored eligible-pool outputs for the map; saved rounds currently retain
-  selected predictions and model coefficients rather than a full scored-pool table.
+- [x] Add separate non-mutating web previews and explicit commit, with stale
+  snapshot detection. The existing CLI `propose` retains its immediate-commit behavior.
+- [x] Persist full scored candidate-pool outputs in web preview artifacts, alongside
+  immutable committed-round predictions and model coefficients.
 - [ ] Select one target with verified structural coverage. Interpret interaction as
   protein–ligand binding initially; drug–drug interactions and dynamics are separate.
 - [ ] Keep model-selection reasons distinct from structural hypotheses. Morgan/ridge
@@ -503,7 +522,7 @@ The schedule assumes focused work and dataset availability. A negative model res
 - [x] Add frozen CheMeleon embeddings and a small prediction head.
 - [x] Run one controlled fine-tuning comparison.
 - [x] Implement campaign exclusions/locks and evaluate diversity separately; greedy remains the default.
-- [ ] Feed real saved predictions into the prototype map, inspector and shortlist.
+- [x] Feed real saved predictions into the connected prototype map, inspector and shortlist.
 
 ## 10. Papers and open-source study plan
 

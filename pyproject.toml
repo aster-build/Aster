@@ -11,6 +11,7 @@ dependencies = ["rdkit", "numpy", "pandas", "scikit-learn", "matplotlib", "jobli
 
 [project.optional-dependencies]
 dev = ["pytest"]
+web = ["fastapi==0.143.0", "uvicorn==0.54.0", "httpx==0.28.1"]
 neural = ["chemprop==2.3.1"]
 
 [project.scripts]

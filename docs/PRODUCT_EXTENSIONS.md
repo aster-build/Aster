@@ -1,7 +1,8 @@
 # Aster: dashboard integration, 3D evidence, and literature-assisted selection
 
-Planning update: 2026-10-13. These are proposed extensions, not implemented features.
-The working backend is the local campaign workflow in `aster/campaign.py`.
+Planning update: 2026-10-13. Milestone 6 is now implemented locally in `apps/web/`
+and `aster/api.py`; see [DASHBOARD.md](DASHBOARD.md). The structural and literature
+extensions remain proposals. The scientific core is `aster/campaign.py`.
 
 ## 1. Reuse the existing prototype
 

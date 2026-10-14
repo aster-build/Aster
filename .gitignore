@@ -6,3 +6,11 @@ __pycache__/
 data/
 artifacts/
 .mplconfig/
+
+node_modules/
+.next/
+*.tsbuildinfo
+.env*
+!.env.example
+!apps/web/src/data/
+!apps/web/src/data/molecules.json
