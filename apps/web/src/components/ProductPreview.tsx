@@ -4,7 +4,7 @@ import { forwardRef, useRef, useState, type KeyboardEvent } from "react";
 import { CandidateMap } from "@/components/CandidateMap";
 import { Molecule } from "@/components/Molecule";
 import { LogoMark } from "@/components/Logo";
-import { ChevronRight } from "@/components/icons";
+import { WorkflowSteps } from "@/components/WorkflowSteps";
 import { IntervalBar, KeyHint, RoleTag } from "@/components/ui";
 import {
   assayed,
@@ -20,13 +20,6 @@ type Props = {
   onDismissGuide: () => void;
   onExpand: () => void;
 };
-
-const STEPS = [
-  { name: "Predict", state: "done" },
-  { name: "Prioritize", state: "current" },
-  { name: "Test", state: "next" },
-  { name: "Learn", state: "upcoming" },
-] as const;
 
 export const ProductPreview = forwardRef<HTMLDivElement, Props>(
   function ProductPreview({ expanded, guideVisible, onDismissGuide, onExpand }, ref) {
@@ -77,34 +70,7 @@ export const ProductPreview = forwardRef<HTMLDivElement, Props>(
             <span className="text-muted">Round {ROUND}</span>
           </div>
 
-          <ol
-            aria-label="Workflow"
-            className="order-last grid w-full grid-cols-4 gap-1 text-[12px] lg:order-none lg:flex lg:w-auto lg:flex-1 lg:justify-center lg:gap-0"
-          >
-            {STEPS.map((step, i) => (
-              <li key={step.name} className="flex items-center" aria-current={step.state === "current" ? "step" : undefined}>
-                <span
-                  className={`flex w-full items-center justify-center gap-1.5 rounded-[5px] px-2 py-1.5 lg:w-auto lg:px-2.5 lg:py-1 ${
-                    step.state === "current"
-                      ? "bg-accent-soft font-medium text-accent-strong"
-                      : step.state === "done"
-                        ? "text-ink-2"
-                        : "text-muted"
-                  }`}
-                >
-                  <span className="hidden font-mono text-[10.5px] opacity-70 sm:inline">0{i + 1}</span>
-                  {step.name}
-                  {step.state === "done" && <span className="sr-only">(complete)</span>}
-                  {step.state === "current" && <span className="sr-only">(current step)</span>}
-                </span>
-                {i < STEPS.length - 1 && (
-                  <span aria-hidden="true" className="hidden px-1 text-faint lg:inline">
-                    <ChevronRight size={12} weight={2.2} />
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
+          <div className="order-last w-full lg:order-none lg:flex lg:w-auto lg:flex-1 lg:justify-center"><WorkflowSteps current={1} /></div>
           <span aria-hidden="true" className="hidden lg:block lg:w-[220px]" />
         </div>
 

@@ -8,6 +8,9 @@ ab() { "$BROWSER_BIN" --session aster-dashboard-check "$@"; }
 ab open http://127.0.0.1:3000/dashboard
 ab wait 800
 ab snapshot -i -d 2
+# A previous check may have left a user-imported campaign selected.
+ab eval 'if(!Array.from(document.querySelectorAll("button")).some(b=>/Try a public|Start fresh/.test(b.textContent))){const s=document.querySelector("#campaign-select");const demo=Array.from(s?.options||[]).find(o=>o.text.includes("public replay"));if(!demo)throw Error("Create a public demo before running this check");s.value=demo.value;s.dispatchEvent(new Event("change",{bubbles:true}));}'
+ab wait 800
 ab eval 'const b=Array.from(document.querySelectorAll("button")).find(b=>/Try a public|Start fresh/.test(b.textContent)); if(!b)throw Error("No demo control");b.click()'
 ab wait 800
 ab eval 'if(!document.querySelector(".campaign-picker"))throw Error(document.body.innerText); Array.from(document.querySelectorAll("button")).find(b=>b.textContent.includes("Preview next batch")).click()'

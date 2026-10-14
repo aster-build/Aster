@@ -141,3 +141,11 @@ Starlette test-client deprecation warning is currently emitted; tests still pass
 Review this workflow, then add the scoped structural-evidence inspector described
 in [PRODUCT_EXTENSIONS.md](PRODUCT_EXTENSIONS.md). 3D rendering, docking, literature
 RAG, calibrated confidence and public deployment are not implemented in this slice.
+
+## Prototype design integration
+
+The live workspace follows the hero's `ProductPreview`: candidate map and compound inspector side by side, with the ranked batch spanning the width below. Both views share `WorkflowSteps`, the Aster wordmark/mark, keyboard hints, global ink/paper/violet tokens, and locally bundled Geist Sans/Mono typefaces. The shortlist supports Up/Down keyboard selection and exposes its selected state to assistive technology.
+
+Live evidence remains distinct from illustrative hero data: the dashboard displays actual ridge predictions, measured analogs, and Tanimoto similarity. It does not render the hero's illustrative uncertainty intervals as model outputs.
+
+Design verification: production build and TypeScript passed; desktop and 390px mobile layouts were inspected; two public replay rounds preserved 32 → 40 → 48 measurements after reload. The landing route and dashboard link were also checked.
