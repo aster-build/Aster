@@ -4,8 +4,9 @@ A reproducible scientific backend for choosing which compounds to test next.
 The research milestones compare molecular predictors and batch-selection policies.
 A local campaign workflow now supports CSV imports, saved Morgan/ridge proposals,
 constraints, result imports, and subsequent rounds.
-The existing prototype has been imported into `apps/web/`; its `/dashboard` route
-now connects to the Python campaign backend. The original `../aster-hero` project is unchanged.
+The workspace app in `apps/web/` connects to the Python campaign backend at
+`/dashboard`; `/` redirects there. The landing page belongs exclusively to the
+separate `../aster-hero` repository and site.
 
 ## Open the connected dashboard
 

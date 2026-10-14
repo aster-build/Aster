@@ -1,8 +1,9 @@
 # Aster web
 
-Next.js frontend imported from the user's `aster-hero` prototype. The landing page
-retains its illustrative preview; `/dashboard` connects to the Python campaign API.
-The original separate landing-page repository remains unchanged.
+Next.js research workspace connected to the Python campaign API. `/` redirects
+to `/dashboard`; `/replay` provides molecular evidence and campaign replay.
+The marketing landing page belongs exclusively to the separate `aster-hero`
+repository and site.
 
 From the repository root, follow [the dashboard guide](../../docs/DASHBOARD.md).
 The scientific backend lives in `../../aster/`. Do not run it in the browser or
@@ -14,5 +15,5 @@ npm ci
 npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
-Use `npm run build` for the production/TypeScript check. The integrated app uses
-system fonts so builds do not require downloading Google Fonts.
+Use `npm run build` for the production/TypeScript check. The workspace uses
+locally bundled Geist fonts so builds do not require downloading Google Fonts.

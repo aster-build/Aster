@@ -1,11 +1,5 @@
-import { Footer } from "@/components/Footer";
-import { Landing } from "@/components/Landing";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <>
-      <Landing />
-      <Footer />
-    </>
-  );
+  redirect("/dashboard");
 }

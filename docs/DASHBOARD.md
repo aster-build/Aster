@@ -1,15 +1,15 @@
 # Connected local dashboard
 
-The existing landing-page prototype has been brought into this repository at
-`apps/web/`. Its original design, landing components and illustrative preview are
-retained; `/dashboard` is the connected campaign workspace. The separate source
-project at `../aster-hero` was not modified.
+The workspace app lives at `apps/web/`. `/` redirects to `/dashboard`, the
+connected campaign workspace. The landing page lives exclusively in the separate
+`../aster-hero` repository and site; no marketing page or illustrative demo is
+served by this app.
 
 ## Folder map
 
 ```text
 aster/                 Python package: chemistry, models, selection, campaigns, API
-apps/web/              Next.js frontend: landing page and working dashboard
+apps/web/              Next.js frontend: campaign workspace and molecular evidence
 examples/dashboard/    Small public-data CSV fixture and replay outcomes
 scripts/               Launchers, demonstrations and verification scripts
 tests/                 Scientific, campaign and API tests
@@ -127,7 +127,7 @@ Verified on the local production build:
   stale/cross-campaign previews, result conflicts, local-origin handling and restart recovery.
 - Production build and TypeScript checks pass.
 - Browser public replay completes two batches, reaches 48 measured compounds,
-  retains both rounds on reload, and links back to the original landing page.
+  retains both rounds on reload, and opens the workspace from the root URL.
 - Real CSV campaign upload succeeds and creates an ordinary campaign; uploading
   its committed-batch result CSV completes the round and updates measurements to 40.
 - Desktop and 390px mobile screenshots inspected; no horizontal page overflow.
@@ -144,8 +144,8 @@ RAG, calibrated confidence and public deployment are not implemented in this sli
 
 ## Prototype design integration
 
-The live workspace follows the hero's `ProductPreview`: candidate map and compound inspector side by side, with the ranked batch spanning the width below. Both views share `WorkflowSteps`, the Aster wordmark/mark, keyboard hints, global ink/paper/violet tokens, and locally bundled Geist Sans/Mono typefaces. The shortlist supports Up/Down keyboard selection and exposes its selected state to assistive technology.
+The live workspace places the candidate map and compound inspector side by side, with the ranked batch spanning the width below. It retains `WorkflowSteps`, the Aster wordmark/mark, keyboard hints, global ink/paper/violet tokens, and locally bundled Geist Sans/Mono typefaces. The shortlist supports Up/Down keyboard selection and exposes its selected state to assistive technology.
 
 Live evidence remains distinct from illustrative hero data: the dashboard displays actual ridge predictions, measured analogs, and Tanimoto similarity. It does not render the hero's illustrative uncertainty intervals as model outputs.
 
-Design verification: production build and TypeScript passed; desktop and 390px mobile layouts were inspected; two public replay rounds preserved 32 → 40 → 48 measurements after reload. The landing route and dashboard link were also checked.
+Design verification: production build and TypeScript passed; desktop and 390px mobile layouts were inspected; two public replay rounds preserved 32 → 40 → 48 measurements after reload. The root URL redirects to the workspace; the landing page is maintained separately.

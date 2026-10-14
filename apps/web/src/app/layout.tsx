@@ -4,7 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Aster makes every experiment count",
+  title: "Aster · Research workspace",
   description:
     "Aster is a research prototype that helps researchers prioritize which compounds to test next, combining activity predictions, uncertainty estimates and assay results.",
 };

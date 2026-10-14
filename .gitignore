@@ -12,5 +12,3 @@ node_modules/
 *.tsbuildinfo
 .env*
 !.env.example
-!apps/web/src/data/
-!apps/web/src/data/molecules.json

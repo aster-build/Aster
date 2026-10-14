@@ -36,6 +36,6 @@ ab eval 'if(document.documentElement.scrollWidth>window.innerWidth+1)throw Error
 ab errors
 ab open http://127.0.0.1:3000/
 ab wait 400
-ab eval 'if(!document.querySelector("a[href=\"/dashboard\"]"))throw Error("Landing link missing");"Landing route linked"'
+ab eval 'if(location.pathname!=="/dashboard"||!document.querySelector(".workspace-nav"))throw Error("Root did not open workspace");if(document.body.innerText.includes("Landing page"))throw Error("Marketing navigation remains");"Root opens workspace"'
 ab open http://127.0.0.1:3000/dashboard
 ab set viewport 1440 1100

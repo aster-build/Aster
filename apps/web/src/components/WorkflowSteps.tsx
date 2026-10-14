@@ -1,6 +1,6 @@
 import { ChevronRight } from '@/components/icons';
 
-/** Shared by the illustrative hero and the live campaign workspace. */
+/** Progress through the live campaign workflow. */
 export function WorkflowSteps({ current }: { current: number }) {
   return (
     <ol aria-label="Workflow" className="flex w-full items-center gap-1 text-[12px] sm:w-auto sm:gap-2">

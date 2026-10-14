@@ -111,7 +111,7 @@ export default function Dashboard() {
   }); }
 
   return <div className="workspace">
-    <header className="workspace-nav"><Link href="/" className="workspace-brand"><Wordmark /><span className="nav-divider">/</span><span className="nav-context">Workspace</span></Link><div className="nav-right"><span className="local-badge"><i />Local research prototype</span><Link href="/">Landing page ↗</Link></div></header>
+    <header className="workspace-nav"><Link href="/" className="workspace-brand"><Wordmark /><span className="nav-divider">/</span><span className="nav-context">Workspace</span></Link><div className="nav-right"><span className="local-badge"><i />Local research prototype</span></div></header>
     <main className="workspace-main">
       <div className="workspace-heading"><div><div className="eyebrow">CAMPAIGN WORKSPACE</div><h1>Your next experiment.</h1><p>A clear path from measured compounds to a considered next batch.</p></div><button className="button" onClick={() => setShowImport(true)} disabled={waiting}>＋ Import campaign</button></div>
       {error && <div role="alert" className="banner error"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
