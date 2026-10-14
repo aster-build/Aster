@@ -1,0 +1,226 @@
+{
+  "pdb_id": "8Y2G",
+  "title": "Human dopamine transporter \u00b7 dexmethylphenidate",
+  "source_url": "https://www.rcsb.org/structure/8Y2G",
+  "retrieved": "2026-10-14",
+  "method": "Cryo-EM",
+  "resolution_angstrom": 2.83,
+  "uniprot": "Q01959",
+  "species": "Homo sapiens",
+  "protein_chain": "A",
+  "ligand_component": "A1D5U",
+  "ligand_name": "Dexmethylphenidate",
+  "ligand_smiles": "COC(=O)[C@H](c1ccccc1)[C@H]2CCCCN2",
+  "ligand_inchikey": "DUGOZIWVEXMGBE-CHWSQXEVSA-N",
+  "ligand_label_chain": "B",
+  "ligand_auth_chain": "A",
+  "ligand_auth_sequence": 701,
+  "ligand_center": [
+    137.93370588235294,
+    134.89088235294116,
+    137.16411764705882
+  ],
+  "contacts": [
+    {
+      "residue": "SER",
+      "chain": "A",
+      "sequence": 422,
+      "label_sequence": 364,
+      "distance": 2.8347156823921553,
+      "protein_atom": "O",
+      "ligand_atom": "C16",
+      "protein_xyz": [
+        134.208,
+        133.167,
+        140.172
+      ],
+      "ligand_xyz": [
+        136.594,
+        131.956,
+        139.236
+      ]
+    },
+    {
+      "residue": "PHE",
+      "chain": "A",
+      "sequence": 76,
+      "label_sequence": 18,
+      "distance": 3.3279299872443096,
+      "protein_atom": "O",
+      "ligand_atom": "C08",
+      "protein_xyz": [
+        133.632,
+        138.574,
+        138.708
+      ],
+      "ligand_xyz": [
+        135.767,
+        137.817,
+        136.27
+      ]
+    },
+    {
+      "residue": "ASP",
+      "chain": "A",
+      "sequence": 79,
+      "label_sequence": 21,
+      "distance": 3.5345913483739717,
+      "protein_atom": "OD2",
+      "ligand_atom": "N11",
+      "protein_xyz": [
+        139.395,
+        138.538,
+        139.44
+      ],
+      "ligand_xyz": [
+        138.641,
+        137.206,
+        136.254
+      ]
+    },
+    {
+      "residue": "VAL",
+      "chain": "A",
+      "sequence": 152,
+      "label_sequence": 94,
+      "distance": 3.616756834513498,
+      "protein_atom": "CG1",
+      "ligand_atom": "C15",
+      "protein_xyz": [
+        139.502,
+        130.605,
+        137.487
+      ],
+      "ligand_xyz": [
+        136.018,
+        131.348,
+        138.112
+      ]
+    },
+    {
+      "residue": "PHE",
+      "chain": "A",
+      "sequence": 326,
+      "label_sequence": 268,
+      "distance": 3.7157450127800757,
+      "protein_atom": "CE1",
+      "ligand_atom": "C13",
+      "protein_xyz": [
+        137.75,
+        132.458,
+        133.167
+      ],
+      "ligand_xyz": [
+        136.931,
+        133.138,
+        136.727
+      ]
+    },
+    {
+      "residue": "LEU",
+      "chain": "A",
+      "sequence": 322,
+      "label_sequence": 264,
+      "distance": 3.7604418623347873,
+      "protein_atom": "O",
+      "ligand_atom": "C10",
+      "protein_xyz": [
+        136.767,
+        139.368,
+        131.875
+      ],
+      "ligand_xyz": [
+        138.026,
+        138.127,
+        135.194
+      ]
+    },
+    {
+      "residue": "ALA",
+      "chain": "A",
+      "sequence": 77,
+      "label_sequence": 19,
+      "distance": 3.771719634331268,
+      "protein_atom": "O",
+      "ligand_atom": "C09",
+      "protein_xyz": [
+        135.449,
+        141.429,
+        138.154
+      ],
+      "ligand_xyz": [
+        136.796,
+        138.837,
+        135.768
+      ]
+    },
+    {
+      "residue": "PHE",
+      "chain": "A",
+      "sequence": 320,
+      "label_sequence": 262,
+      "distance": 3.775317999851121,
+      "protein_atom": "O",
+      "ligand_atom": "C10",
+      "protein_xyz": [
+        140.475,
+        139.822,
+        132.874
+      ],
+      "ligand_xyz": [
+        138.026,
+        138.127,
+        135.194
+      ]
+    },
+    {
+      "residue": "TYR",
+      "chain": "A",
+      "sequence": 156,
+      "label_sequence": 98,
+      "distance": 3.889926220380026,
+      "protein_atom": "CD2",
+      "ligand_atom": "C17",
+      "protein_xyz": [
+        138.322,
+        132.454,
+        142.796
+      ],
+      "ligand_xyz": [
+        137.331,
+        133.148,
+        139.099
+      ]
+    },
+    {
+      "residue": "SER",
+      "chain": "A",
+      "sequence": 321,
+      "label_sequence": 263,
+      "distance": 3.9694998425494292,
+      "protein_atom": "O",
+      "ligand_atom": "C09",
+      "protein_xyz": [
+        137.408,
+        142.253,
+        133.841
+      ],
+      "ligand_xyz": [
+        136.796,
+        138.837,
+        135.768
+      ]
+    }
+  ],
+  "exact_demo_matches": [],
+  "contact_definition": "Minimum heavy-atom distance \u2264 4 \u00c5; geometric proximity, not a hydrogen-bond assignment or energetic explanation.",
+  "construct_note": "Engineered 562-residue deposited construct; 545 modeled residues. RCSB reports one sequence conflict; inspect source metadata before mechanistic interpretation.",
+  "evidence_type": "experimental reference complex",
+  "files": {
+    "protein-source.json": "b2594ed8b489b877c6f69fe02d6765efeea846f8c0e3abe512c1200bbcc20009",
+    "entry-source.json": "ceeb499df55ffd0c12a1f5765600464b8a2f645dd96fc01ae5d46ccfb0340128",
+    "complex.cif": "b6450992c4fb3f0a5ab3cb23b3bf1db1f47a6aabaef2bbd487219d80c805df45",
+    "ligand-source.json": "b69239c5fd7b42bc4ee63ed444143f181ff272b5f3dcfd5e8b758a4956fc8e01",
+    "ligand-entity.json": "c5db567d3a1fa31b8eebce566ad4a41666793b518543e39c720a80831b93a2b1"
+  }
+}

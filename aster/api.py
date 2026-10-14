@@ -195,6 +195,11 @@ def create_app(storage=None):
                 'demo': state.get('demo', False), 'recipe': state['recipe'], 'rounds': rounds, 'events': state['events'],
                 'compounds': [{'compound_id': key, **value} for key, value in state['compounds'].items()]}
 
+    @app.get('/campaigns/{cid}/replay')
+    def replay(cid: str):
+        from .replay import replay_manifest
+        return replay_manifest(database(cid), store)
+
     @app.post('/campaigns/{cid}/constraints')
     def constraints(cid: str, body: ConstraintInput):
         # Serialize revision check and update together; never acquire a second writer lock.
