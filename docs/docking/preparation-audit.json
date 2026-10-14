@@ -1,0 +1,8 @@
+{
+  "original_protein_heavy_atoms": 4302,
+  "prepared_protein_heavy_atoms": 4302,
+  "missing": [],
+  "extra": [],
+  "changed_coordinates": 2,
+  "explanation": "Meeko swaps the symmetry-equivalent terminal VAL620 O/OXT atom names. Coordinate sets unchanged; no protein heavy atoms added or removed."
+}

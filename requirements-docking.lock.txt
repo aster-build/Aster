@@ -1,0 +1,11 @@
+gemmi==0.7.5
+meeko==0.8.0
+numpy==2.5.4
+pandas==3.0.6
+pillow==12.3.0
+posebusters==0.6.5
+python-dateutil==2.9.0.post0
+PyYAML==6.0.3
+rdkit==2026.9.1
+scipy==1.18.1
+six==1.17.0

@@ -62,6 +62,11 @@ class CommitInput(BaseModel):
     preview_id: str
 
 
+class DockInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    compound_id: str = Field(min_length=1, max_length=250)
+
+
 class ResultsInput(BaseModel):
     csv: str = Field(max_length=2_000_000)
 
@@ -69,6 +74,8 @@ class ResultsInput(BaseModel):
 def create_app(storage=None):
     store = Path(storage or os.environ.get('ASTER_STORAGE', ROOT/'artifacts/dashboard')).resolve()
     store.mkdir(parents=True, exist_ok=True)
+    from .docking import DockingJobs, validation
+    docking = DockingJobs(store)
     jobs = store/'jobs'
     jobs.mkdir(exist_ok=True)
     executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='aster-model')
@@ -84,6 +91,7 @@ def create_app(storage=None):
     async def lifespan(app):
         yield
         executor.shutdown(wait=True)
+        docking.close()
 
     app = FastAPI(title='Aster local campaign API', version='0.1.0', lifespan=lifespan)
 
@@ -312,6 +320,24 @@ def create_app(storage=None):
         Draw.rdMolDraw2D.PrepareAndDrawMolecule(drawer, mol)
         drawer.FinishDrawing()
         return Response(drawer.GetDrawingText(), media_type='image/svg+xml')
+
+    @app.get('/docking/validation')
+    def docking_validation():
+        return validation()
+
+    @app.get('/campaigns/{cid}/docking')
+    def docking_history(cid: str):
+        database(cid)
+        return docking.list(cid)
+
+    @app.post('/campaigns/{cid}/docking')
+    def submit_docking(cid: str, body: DockInput):
+        return docking.submit(cid, campaign.load(database(cid)), body.compound_id)
+
+    @app.get('/campaigns/{cid}/docking/{jid}')
+    def docking_result(cid: str, jid: str):
+        database(cid)
+        return docking.get(cid, jid)
 
     return app
 
