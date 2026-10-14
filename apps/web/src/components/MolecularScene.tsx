@@ -10,6 +10,16 @@ import { Color } from 'molstar/lib/mol-util/color';
 import { Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import type { Contact, StructureEvidence } from '@/lib/replay';
 
+// Keep these renderer colors aligned with the scene tokens in globals.css.
+const scenePalette = {
+  background: Color(0x243746),
+  protein: Color(0xa9c0d0),
+  reference: Color(0x86a5ff),
+  candidate: Color(0xf2d75c),
+  highlight: Color(0x6fd0d6),
+  selection: Color(0xd69cd5),
+};
+
 type Props = { candidateSdf?:string; evidence:StructureEvidence; view:'protein'|'pocket'|'ligand'; contact:Contact|null; onResidue:(sequence:number)=>void };
 export default function MolecularScene({evidence,view,contact,onResidue,candidateSdf}:Props) {
   const host=useRef<HTMLDivElement>(null);
@@ -19,7 +29,7 @@ export default function MolecularScene({evidence,view,contact,onResidue,candidat
   const [ready,setReady]=useState(false); const [error,setError]=useState('');
   useEffect(()=>{
     let cancelled=false; let observer:ResizeObserver|undefined;
-    const p=new PluginContext({...DefaultPluginSpec(),canvas3d:{renderer:{backgroundColor:Color(0xf3f3ef)},camera:{mode:'perspective'}}});
+    const p=new PluginContext({...DefaultPluginSpec(),canvas3d:{renderer:{backgroundColor:scenePalette.background,highlightColor:scenePalette.highlight,selectColor:scenePalette.selection},camera:{mode:'perspective'}}});
     plugin.current=p;
     async function load() {
       try {
@@ -31,13 +41,13 @@ export default function MolecularScene({evidence,view,contact,onResidue,candidat
         const s=await p.builders.structure.createStructure(model,{name:'model',params:{}});
         structure.current=s.obj!.data;
         const protein=await p.builders.structure.tryCreateComponentStatic(s,'polymer');
-        if(protein)await p.builders.structure.representation.addRepresentation(protein,{type:'cartoon',color:'uniform',colorParams:{value:Color(0x99aaa8)},typeParams:{alpha:0.62}});
+        if(protein)await p.builders.structure.representation.addRepresentation(protein,{type:'cartoon',color:'uniform',colorParams:{value:scenePalette.protein},typeParams:{alpha:0.62}});
         const ligandExpr=MS.struct.generator.atomGroups({'residue-test':MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_comp_id(),evidence.ligand_component])});
         const ligand=await p.builders.structure.tryCreateComponentFromExpression(s,ligandExpr,'reference-ligand');
-        if(ligand)await p.builders.structure.representation.addRepresentation(ligand,{type:'ball-and-stick',color:'element-symbol',colorParams:{carbonColor:{name:'uniform',params:{value:Color(0x7251d2)}}},typeParams:{sizeFactor:0.35}});
+        if(ligand)await p.builders.structure.representation.addRepresentation(ligand,{type:'ball-and-stick',color:'element-symbol',colorParams:{carbonColor:{name:'uniform',params:{value:scenePalette.reference}}},typeParams:{sizeFactor:0.35}});
         const pocketExpr=MS.struct.generator.atomGroups({'chain-test':MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(),'A']),'residue-test':MS.core.set.has([MS.set(...evidence.contacts.map(c=>c.sequence)),MS.struct.atomProperty.macromolecular.auth_seq_id()])});
         const pocket=await p.builders.structure.tryCreateComponentFromExpression(s,pocketExpr,'pocket');
-        if(pocket)await p.builders.structure.representation.addRepresentation(pocket,{type:'ball-and-stick',color:'element-symbol',colorParams:{carbonColor:{name:'uniform',params:{value:Color(0x999d9a)}}},typeParams:{sizeFactor:0.18}});
+        if(pocket)await p.builders.structure.representation.addRepresentation(pocket,{type:'ball-and-stick',color:'element-symbol',colorParams:{carbonColor:{name:'uniform',params:{value:scenePalette.protein}}},typeParams:{sizeFactor:0.18}});
         observer=new ResizeObserver(()=>p.handleResize()); observer.observe(host.current!);
         p.behaviors.interaction.click.subscribe(event=>{
           if(!StructureElement.Loci.is(event.current.loci)||!event.current.loci.elements.length)return;
@@ -62,7 +72,7 @@ export default function MolecularScene({evidence,view,contact,onResidue,candidat
         const model=await p!.builders.structure.createModel(trajectory);
         const s=await p!.builders.structure.createStructure(model);
         const component=await p!.builders.structure.tryCreateComponentStatic(s,'all');
-        if(component&&!cancelled)await p!.builders.structure.representation.addRepresentation(component,{type:'ball-and-stick',color:'element-symbol',colorParams:{carbonColor:{name:'uniform',params:{value:Color(0x168765)}}},typeParams:{sizeFactor:0.3}});
+        if(component&&!cancelled)await p!.builders.structure.representation.addRepresentation(component,{type:'ball-and-stick',color:'element-symbol',colorParams:{carbonColor:{name:'uniform',params:{value:scenePalette.candidate}}},typeParams:{sizeFactor:0.3}});
         if(cancelled){await p!.state.data.build().delete(data.ref).commit();return;}
         p!.managers.camera.focusSphere({center:Vec3.create(...evidence.ligand_center as [number,number,number]),radius:13},{durationMs:0});
       }catch(e){if(!cancelled)setError(e instanceof Error?e.message:'Candidate rendering failed');}
