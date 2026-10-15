@@ -10,17 +10,19 @@ import re
 import sqlite3
 import tempfile
 import threading
+from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 from uuid import uuid4
+from typing import Literal
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 from rdkit import Chem
-from rdkit.Chem import Draw
+from rdkit.Chem import Draw, Descriptors, Crippen, rdMolDescriptors
 
 from . import campaign
 from .acquisition import nearest_measured
@@ -60,6 +62,7 @@ class PreviewInput(BaseModel):
 
 class CommitInput(BaseModel):
     preview_id: str
+    selected_ids: list[str] | None = Field(default=None, min_length=1, max_length=64)
 
 
 class DockInput(BaseModel):
@@ -69,6 +72,18 @@ class DockInput(BaseModel):
 
 class ResultsInput(BaseModel):
     csv: str = Field(max_length=2_000_000)
+
+
+class EvidenceInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    q: str = Field(min_length=1, max_length=500)
+    compound_id: str = Field(min_length=1, max_length=250)
+    scope: Literal['exact', 'analog', 'target'] = 'exact'
+    endpoint: str | None = None
+    evidence_type: Literal['experimental', 'computational', 'context'] | None = None
+    cutoff: date | None = None
+    method: Literal['lexical', 'hybrid'] = 'lexical'
+    snapshot_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
 
 
 def create_app(storage=None):
@@ -176,6 +191,100 @@ def create_app(storage=None):
             job.update(status='failed', error=str(error))
         atomic_json(path, job)
 
+    @app.get('/evidence/search')
+    def literature_search(q: str = Query(min_length=1, max_length=500),
+                          target: str = Query(min_length=1, max_length=40),
+                          species: str = Query(min_length=1, max_length=150),
+                          smiles: str | None = Query(default=None, max_length=2000),
+                          endpoint: str | None = Query(default=None, max_length=100),
+                          cutoff: date | None = None,
+                          evidence_type: Literal['experimental', 'computational', 'context'] | None = None,
+                          match: Literal['exact', 'analog'] = 'exact',
+                          method: Literal['lexical', 'hybrid'] = 'lexical',
+                          limit: int = Query(default=10, ge=1, le=50)):
+        from .evidence import search
+        return search(store/'evidence'/'index.sqlite', q, target, species, smiles=smiles,
+                      endpoint=endpoint, cutoff=cutoff, limit=limit,
+                      evidence_type=evidence_type, match=match, method=method)
+
+    @app.get('/evidence/status')
+    def evidence_status():
+        from contextlib import closing
+        path = store/'evidence'/'index.sqlite'
+        if not path.exists():
+            return {'status': 'corpus_unavailable', 'claims': 0, 'documents': 0}
+        with closing(sqlite3.connect(path.as_uri()+'?mode=ro', uri=True)) as connection:
+            records = [json.loads(row[0]) for row in connection.execute('SELECT payload FROM claims')]
+            return {'status': 'ready', 'snapshot_sha256': connection.execute('SELECT snapshot FROM metadata').fetchone()[0],
+                    'claims': len(records), 'documents': len({c['document_id'] for c in records}),
+                    'human_reviewed': sum(c.get('review_method') == 'human' and c['review_status'] == 'reviewed' for c in records),
+                    'machine_reviewed': sum(c.get('review_method') == 'machine' and c['review_status'] == 'reviewed' for c in records)}
+
+    @app.get('/evidence/sources/{name}')
+    def evidence_source(name: str):
+        config = json.loads((ROOT/'configs/literature/dat-v1.json').read_text())
+        if name not in config['sources']:
+            raise HTTPException(404, 'Unknown source')
+        path = ROOT/'data/literature/dat-v1/sources'/name
+        if not path.is_file():
+            raise HTTPException(404, 'Source snapshot unavailable')
+        content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != config['sources'][name]['sha256']:
+            raise HTTPException(409, 'Source snapshot checksum mismatch')
+        return Response(content, media_type='application/octet-stream', headers={'Content-Disposition': f'attachment; filename="{name}"'})
+
+    def campaign_evidence(cid, q, compound_id, scope, endpoint, evidence_type, cutoff, method):
+        from .evidence import search
+        state = campaign.load(database(cid))
+        if not state.get('demo') or state['assay'] != 'MoleculeACE CHEMBL238 Ki task':
+            raise HTTPException(409, 'Literature is enabled only for the verified DAT demo. Imported campaigns need target verification.')
+        if compound_id not in state['compounds']:
+            raise HTTPException(404, 'Compound not found')
+        return search(store/'evidence'/'index.sqlite', q, 'Q01959', 'Homo sapiens',
+                      smiles=None if scope == 'target' else state['compounds'][compound_id]['smiles'],
+                      match='analog' if scope == 'analog' else 'exact', endpoint=endpoint,
+                      evidence_type=evidence_type, cutoff=cutoff, method=method)
+
+    @app.get('/campaigns/{cid}/evidence')
+    def find_campaign_evidence(cid: str, q: str = Query(min_length=1, max_length=500),
+                               compound_id: str = Query(min_length=1, max_length=250),
+                               scope: Literal['exact', 'analog', 'target'] = 'exact',
+                               endpoint: str | None = None,
+                               evidence_type: Literal['experimental', 'computational', 'context'] | None = None,
+                               cutoff: date | None = None,
+                               method: Literal['lexical', 'hybrid'] = 'lexical'):
+        return campaign_evidence(cid, q, compound_id, scope, endpoint, evidence_type, cutoff, method)
+
+    @app.post('/campaigns/{cid}/rounds/{number}/evidence', status_code=201)
+    def save_evidence(cid: str, number: int, body: EvidenceInput):
+        state = campaign.load(database(cid))
+        selected_round = next((r for r in state['rounds'] if r['round'] == number), None)
+        if selected_round is None:
+            raise HTTPException(404, 'Committed round not found')
+        result = campaign_evidence(cid, body.q, body.compound_id, body.scope, body.endpoint, body.evidence_type, body.cutoff, body.method)
+        if result['snapshot_sha256'] != body.snapshot_sha256:
+            raise HTTPException(409, 'The corpus changed. Search again before saving this evidence.')
+        record = {'campaign_id': cid, 'round': number, 'training_sha256': selected_round['training_sha256'],
+                  'query': body.model_dump(mode='json'), 'result': result,
+                  'timing': 'Attached after commitment for review; not evidence that was used to select this batch.'}
+        key = fingerprint(record)
+        directory = store/'evidence'/'records'/cid/str(number)
+        directory.mkdir(parents=True, exist_ok=True)
+        # Exclusive creation makes retries idempotent without sharing temporary files.
+        with submission_lock:
+            path = directory/(key+'.json')
+            if not path.exists():
+                atomic_json(path, record)
+        return {'id': key, 'record': record}
+
+    @app.get('/campaigns/{cid}/rounds/{number}/evidence')
+    def saved_evidence(cid: str, number: int):
+        state = campaign.load(database(cid))
+        if not any(r['round'] == number for r in state['rounds']):
+            raise HTTPException(404, 'Committed round not found')
+        directory = store/'evidence'/'records'/cid/str(number)
+        return [{'id': p.stem, 'record': json.loads(p.read_text())} for p in sorted(directory.glob('*.json'))]
+
     @app.get('/health')
     def health():
         return {'status': 'ok', 'mode': 'local-research-prototype'}
@@ -266,10 +375,26 @@ def create_app(storage=None):
         with campaign.transaction(database(cid), True) as state:
             for record in state['rounds']:
                 if record.get('preview_id') == body.preview_id:
+                    if body.selected_ids is not None and body.selected_ids != [r['compound_id'] for r in record['recommendations']]:
+                        raise HTTPException(409, 'This preview was already committed with a different selection.')
                     return {'round': record['round'], 'already_committed': True}
             if fingerprint(state) != preview['revision']:
                 raise HTTPException(409, 'Preview is stale. Generate a fresh preview before committing.')
             record = preview['record']
+            if body.selected_ids is not None:
+                selected = body.selected_ids
+                eligible = set(record['eligible_ids'])
+                locked = {c for c in eligible if state['compounds'][c]['constraint'] == 'locked'}
+                if len(selected) != len(set(selected)) or not set(selected) <= eligible:
+                    raise ValueError('Select unique, eligible candidates from this preview.')
+                if len(selected) > len(record['recommendations']) or not locked <= set(selected):
+                    raise ValueError('Respect the preview batch size and include all locked compounds.')
+                scores = {r['compound_id']: r for r in preview['scored']}
+                record['recommendations'] = [
+                    {**scores[c], 'rank': rank, 'smiles': state['compounds'][c]['smiles'],
+                     'selection_reason': 'user_locked' if c in locked else 'user_selected',
+                     'outside_diagnostic_range': not 0 <= scores[c]['prediction'] <= 14}
+                    for rank, c in enumerate(selected, 1)]
             record['preview_id'] = body.preview_id
             for row in record['recommendations']:
                 state['compounds'][row['compound_id']]['status'] = 'pending'
@@ -320,6 +445,15 @@ def create_app(storage=None):
         Draw.rdMolDraw2D.PrepareAndDrawMolecule(drawer, mol)
         drawer.FinishDrawing()
         return Response(drawer.GetDrawingText(), media_type='image/svg+xml')
+
+    @app.get('/campaigns/{cid}/molecule-properties')
+    def molecule_properties(cid: str, compound_id: str):
+        state = campaign.load(database(cid))
+        if compound_id not in state['compounds']:
+            raise HTTPException(404, 'Compound not found')
+        mol = Chem.MolFromSmiles(state['compounds'][compound_id]['smiles'])
+        return {'mw': Descriptors.MolWt(mol), 'logp': Crippen.MolLogP(mol),
+                'tpsa': rdMolDescriptors.CalcTPSA(mol)}
 
     @app.get('/docking/validation')
     def docking_validation():

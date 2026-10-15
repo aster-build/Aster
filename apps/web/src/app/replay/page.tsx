@@ -1,3 +1,3 @@
-import EvidenceReplay from '@/components/EvidenceReplay';
-export const metadata={title:'Aster · Molecular evidence replay'};
-export default function ReplayPage(){return <EvidenceReplay/>;}
+import { redirect } from 'next/navigation';
+// The previous evidence workspace is preserved in components/EvidenceReplay.tsx.
+export default function ReplayPage(){ redirect('/dashboard'); }

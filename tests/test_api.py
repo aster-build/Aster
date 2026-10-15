@@ -120,3 +120,38 @@ def test_restart_keeps_campaign_and_marks_interrupted_job_failed(tmp_path):
         job=client.get('/jobs/'+jid).json()
         assert job['status']=='failed' and 'restarted' in job['error']
         assert preview(client,cid)['training_count']==32
+
+
+def test_manual_selection_is_committed_exactly_and_replayed(client):
+    cid = demo(client)
+    proposal = preview(client, cid, 3)
+    original = {r['compound_id'] for r in proposal['recommendations']}
+    alternate = next(r['compound_id'] for r in proposal['scored'] if r['compound_id'] not in original and r['constraint'] != 'excluded')
+    selected = [proposal['recommendations'][0]['compound_id'], alternate]
+    body = {'preview_id': proposal['id'], 'selected_ids': selected}
+    assert client.post(f'/campaigns/{cid}/commit', json=body).status_code == 200
+    state = client.get(f'/campaigns/{cid}').json()
+    record = state['rounds'][0]
+    assert [r['compound_id'] for r in record['recommendations']] == selected
+    assert all(r['selection_reason'] == 'user_selected' for r in record['recommendations'])
+    assert {c['compound_id'] for c in state['compounds'] if c['status'] == 'pending'} == set(selected)
+    assert client.post(f'/campaigns/{cid}/commit', json=body).json()['already_committed']
+    assert client.post(f'/campaigns/{cid}/commit', json={**body, 'selected_ids':selected[::-1]}).status_code == 409
+    assert client.post(f'/campaigns/{cid}/rounds/1/demo-results', json={}).json()['added'] == 2
+    assert preview(client, cid, 3)['training_count'] == 34
+
+
+def test_manual_selection_rejects_ineligible_duplicate_oversize_and_missing_lock(client):
+    cid = demo(client)
+    state = client.get(f'/campaigns/{cid}').json()
+    available = [c['compound_id'] for c in state['compounds'] if c['status'] == 'available']
+    locked, excluded = available[:2]
+    assert client.post(f'/campaigns/{cid}/constraints', json={'ids':[locked], 'mode':'locked','revision':state['revision']}).status_code == 200
+    state = client.get(f'/campaigns/{cid}').json()
+    assert client.post(f'/campaigns/{cid}/constraints', json={'ids':[excluded], 'mode':'excluded','revision':state['revision']}).status_code == 200
+    proposal = preview(client,cid,2)
+    eligible = [r['compound_id'] for r in proposal['scored'] if r['constraint']=='available']
+    for selected in ([locked,locked], [locked,excluded], [eligible[0]], [locked,*eligible[:2]], ['unknown'], []):
+        response = client.post(f'/campaigns/{cid}/commit',json={'preview_id':proposal['id'],'selected_ids':selected})
+        assert response.status_code == 422, response.text
+    assert client.get(f'/campaigns/{cid}').json()['rounds'] == []

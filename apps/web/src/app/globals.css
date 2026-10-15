@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #243746;
-  --color-ink-2: #3d5263;
-  --color-muted: #607181;
-  --color-faint: #8b9dad;
-  --color-line: #dfe7ee;
-  --color-line-strong: #c5d2df;
-  --color-stage: #f7f9fc;
+  --color-ink: #252529;
+  --color-ink-2: #48434f;
+  --color-muted: #797981;
+  --color-faint: #aaa4b3;
+  --color-line: #e7e6e9;
+  --color-line-strong: #d9d3e2;
+  --color-stage: #faf9fc;
   --color-paper: #ffffff;
-  --color-accent: #4669c7;
-  --color-accent-strong: #3655aa;
-  --color-accent-soft: #edf2ff;
-  --color-lemon: #f2d75c;
-  --color-lemon-soft: #fff8d6;
-  --color-scene: #243746;
-  --color-scene-text: #f7f9fc;
+  --color-accent: #6243db;
+  --color-accent-strong: #5233c7;
+  --color-accent-soft: #f1edff;
+  --color-lemon: #b7a2e6;
+  --color-lemon-soft: #f3effa;
+  --color-scene: #252529;
+  --color-scene-text: #faf9fc;
   --color-scene-muted: #bdcddd;
-  --color-protein: #a9c0d0;
-  --color-reference: #86a5ff;
-  --color-candidate: #f2d75c;
+  --color-protein: #baa9d0;
+  --color-reference: #9064d8;
+  --color-candidate: #b7a2e6;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;

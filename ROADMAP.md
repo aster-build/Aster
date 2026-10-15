@@ -1,6 +1,35 @@
 # Aster roadmap
 
-Updated: 2026-10-14. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation, expanded structural analysis, literature RAG, and a controlled evidence-augmented selection study remain proposed below.
+Updated: 2026-10-14. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation, expanded structural analysis, and a controlled evidence-augmented selection study remain proposed below. Milestone 8 has a working local literature workflow and machine-audited pilot corpus; independent scientific review remains unfinished.
+
+### Milestone 8 — local literature workflow implemented; independent review pending (2026-10-14)
+
+- [x] Validated corpus importer, isolated SQLite FTS5 index, snapshot hashes,
+  source downloads and read-only search API.
+- [x] Screen 100 Europe PMC metadata records and 100 ChEMBL activities. Retain
+  eight permitted article abstracts and 34 direct-target measurements across 15
+  documents. All source audits are explicitly machine-labelled.
+- [x] Add exact-compound, analog and target-context evidence cards; endpoint,
+  evidence-type and date filters; source citations; explicit no-evidence states.
+- [x] Resolve explicit DOI/PMID/PMCID aliases; flag same-assay measurement
+  disagreements without pooling different assays, endpoints or units.
+- [x] Save immutable evidence results to committed rounds without changing
+  campaign state; clearly label attachment after selection.
+- [x] Run 50 machine-authored engineering questions: lexical and character-TF-IDF
+  hybrid recall@10 1.00, 8/8 abstentions, 42/42 source-fidelity checks. Keep keyword
+  search as default. These are not independent or blind scientific results.
+- [x] Verify 76 Python tests, production build/TypeScript, targeted frontend lint,
+  desktop/mobile source cards, saved-record reload and unchanged campaign state.
+- [ ] Complete independently reviewed questions and document/chemical-series-separated
+  development/test evaluation. The review pack is prepared, with all decisions pending.
+- [ ] Expand beyond the 15-document pilot where the review identifies coverage gaps;
+  evaluate neural retrieval/PaperQA on the reviewed benchmark before promotion.
+
+See [LITERATURE_EVIDENCE.md](docs/LITERATURE_EVIDENCE.md),
+[the evaluation protocol](docs/LITERATURE_EVALUATION_PROTOCOL.md), and
+[the independent review pack](output/literature-review/index.html).
+**Milestone 8 is not marked complete:** the roadmap's independent review gate is
+still unmet. Milestone 7B docking transfer validation remains separately unfinished.
 
 ### Milestone 7B — exploratory docking implemented locally (2026-10-14)
 
@@ -247,15 +276,14 @@ platform is not required for the next milestone. Inspected `ProductPreview.tsx`,
 Detailed brainstorming, stack, architecture, data contracts, prior work, sources,
 and evaluation gates: [PRODUCT_EXTENSIONS.md](docs/PRODUCT_EXTENSIONS.md).
 Milestone 6 and the first 7A evidence replay are implemented locally. Later structural
-expansion and milestones 8–9 remain planned and are not
-scientifically validated.
+expansion and milestone 9 remain planned. Milestone 8 has a local literature workflow and pilot corpus; none of these extensions has demonstrated selection improvement.
 
 | Milestone | Scope and proposed stack | Exit gate |
 | --- | --- | --- |
 | 6. Connect the existing prototype — complete locally | Existing Next.js/React/TypeScript UI → FastAPI/Pydantic → campaign package, SQLite, local worker; retain the visual design | Browser import → preview → commit eight picks → export → import results → round two, with saved state and real evidence |
 | 7A. First 3D evidence replay — implemented locally | Mol*; pinned RCSB 8Y2G; RDKit identity checking; verified geometric proximity; saved campaign replay. PLIP deferred | Verified ligand/target/atom mapping, source-labelled structure, contact selection and nearest-measured evidence; no invented binding pose |
 | 7B. Exploratory predicted poses — implemented locally; transfer validation pending | AutoDock Vina pilot with recorded preparation, pocket and seeds | Predeclared pose-validation checks pass; predicted poses remain labelled and docking scores do not replace potency |
-| 8. Literature evidence RAG | Europe PMC permitted content + ChEMBL records; typed claims, entity resolution, lexical/dense retrieval; SQLite FTS5/NumPy initially, Postgres/pgvector when warranted | Reviewed retrieval/extraction/citation test set, contradiction handling and abstention; literature does not silently change model scores |
+| 8. Literature evidence RAG — local workflow implemented; independent review pending | Europe PMC permitted content + ChEMBL records; typed claims, entity resolution, lexical/dense retrieval; SQLite FTS5/NumPy initially, Postgres/pgvector when warranted | Reviewed retrieval/extraction/citation test set, contradiction handling and abstention; literature does not silently change model scores |
 | 9. Evidence-augmented selection research | Compare baseline, reviewed literature augmentation, structural features, and combined evidence; optional MoleculeSTM-style retrieval/fusion later | Frozen corpus and model, no hidden-label access, matched information/budgets, and additional-target evaluation before promotion |
 
 - [x] Replace synthetic counts, compound IDs, rationale text and pIC50-only labels
@@ -267,11 +295,11 @@ scientifically validated.
   snapshot detection. The existing CLI `propose` retains its immediate-commit behavior.
 - [x] Persist full scored candidate-pool outputs in web preview artifacts, alongside
   immutable committed-round predictions and model coefficients.
-- [ ] Select one target with verified structural coverage. Interpret interaction as
+- [x] Select one target with verified structural coverage. Interpret interaction as
   protein–ligand binding initially; drug–drug interactions and dynamics are separate.
-- [ ] Keep model-selection reasons distinct from structural hypotheses. Morgan/ridge
+- [x] Keep model-selection reasons distinct from structural hypotheses. Morgan/ridge
   does not consume protein coordinates, so a displayed contact cannot explain its score.
-- [ ] Build a small target-specific literature corpus before broad ingestion. Preserve
+- [x] Build a small target-specific literature corpus before broad ingestion. Preserve
   document dates, licenses, exact claim sources, compound identity, and assay context.
 - [ ] Evaluate retrieval quality independently from downstream selection performance.
   No LLM fine-tuning is needed for the initial evidence retrieval milestone.

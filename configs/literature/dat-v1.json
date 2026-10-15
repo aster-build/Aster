@@ -1,0 +1,107 @@
+{
+  "version": "dat-v1",
+  "retrieved": "2026-10-14",
+  "abstracts": {
+    "PMC9124866": {
+      "license": "CC BY (version not stated in source permission text)",
+      "evidence_type": "experimental"
+    },
+    "PMC11324517": {
+      "license": "CC BY 4.0",
+      "evidence_type": "experimental"
+    },
+    "PMC5354487": {
+      "license": "CC BY 4.0",
+      "evidence_type": "experimental",
+      "notices": [
+        {
+          "kind": "Published correction",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5409482/",
+          "note": "The 2017 correction changes the grant attribution for Yang Li. The notice does not state a change to the study results. Machine-checked against the correction notice on 2026-10-14."
+        }
+      ]
+    },
+    "PMC8227285": {
+      "license": "CC BY 4.0",
+      "evidence_type": "experimental"
+    },
+    "PMC11202288": {
+      "license": "CC BY 4.0",
+      "evidence_type": "computational"
+    },
+    "PMC4621520": {
+      "license": "CC BY 4.0",
+      "evidence_type": "experimental"
+    },
+    "PMC10020207": {
+      "license": "CC BY (version not stated in source permission text)",
+      "evidence_type": "context"
+    },
+    "PMC6028122": {
+      "license": "CC0 1.0",
+      "evidence_type": "experimental"
+    }
+  },
+  "sources": {
+    "chembl-molecule.json": {
+      "url": "https://www.ebi.ac.uk/chembl/api/data/molecule.json?molecule_chembl_id__in=CHEMBL1175,CHEMBL119605,CHEMBL1202031,CHEMBL132683,CHEMBL14144,CHEMBL14257,CHEMBL14305,CHEMBL14370,CHEMBL14531,CHEMBL145810,CHEMBL145940,CHEMBL145994,CHEMBL146042,CHEMBL14613,CHEMBL146332,CHEMBL146615,CHEMBL147040,CHEMBL147544,CHEMBL147950,CHEMBL147983,CHEMBL148104,CHEMBL14924,CHEMBL173427,CHEMBL174088,CHEMBL1744173,CHEMBL1788140,CHEMBL184807,CHEMBL185608,CHEMBL186119,CHEMBL186306,CHEMBL190700,CHEMBL190703,CHEMBL190937,CHEMBL192528,CHEMBL192619,CHEMBL196468,CHEMBL2029053,CHEMBL2112915,CHEMBL2112916,CHEMBL2113054,CHEMBL2113055,CHEMBL22183,CHEMBL275212,CHEMBL27979,CHEMBL281594,CHEMBL294105,CHEMBL294733,CHEMBL295467,CHEMBL303232,CHEMBL303494,CHEMBL304656,CHEMBL311347,CHEMBL324967,CHEMBL325669,CHEMBL326713,CHEMBL332097,CHEMBL332098,CHEMBL335423,CHEMBL343211,CHEMBL344110,CHEMBL344116,CHEMBL344513,CHEMBL345689,CHEMBL348552,CHEMBL353333,CHEMBL356531,CHEMBL356552,CHEMBL356750,CHEMBL356981,CHEMBL359025,CHEMBL365649,CHEMBL365812,CHEMBL366170,CHEMBL370805,CHEMBL372378,CHEMBL41,CHEMBL424496,CHEMBL425010,CHEMBL42553,CHEMBL428706,CHEMBL490,CHEMBL549,CHEMBL59,CHEMBL612232,CHEMBL66068,CHEMBL67387,CHEMBL72,CHEMBL814&limit=1000",
+      "sha256": "627425abe922e4d7090e796ff4f3b735ee8157d0f2f62a0127809b94ddf13ec1"
+    },
+    "chembl-document.json": {
+      "url": "https://www.ebi.ac.uk/chembl/api/data/document.json?document_chembl_id__in=CHEMBL1132308,CHEMBL1133189,CHEMBL1133565,CHEMBL1133704,CHEMBL1136450,CHEMBL1136501,CHEMBL1136688,CHEMBL1136726,CHEMBL1138631,CHEMBL1140286,CHEMBL1141089,CHEMBL1141227,CHEMBL1145212,CHEMBL1147545,CHEMBL1149199,CHEMBL1149321&limit=1000",
+      "sha256": "7bd78a06ad0fbc93fdbc33ca1573c02ee260792560b5fa15cbc87179461b4413"
+    },
+    "chembl-assay.json": {
+      "url": "https://www.ebi.ac.uk/chembl/api/data/assay.json?assay_chembl_id__in=CHEMBL668632,CHEMBL669522,CHEMBL670046,CHEMBL670048,CHEMBL670050,CHEMBL670058,CHEMBL670174,CHEMBL670175,CHEMBL670787,CHEMBL670788,CHEMBL670790,CHEMBL670791,CHEMBL670792,CHEMBL670938,CHEMBL670939,CHEMBL671611,CHEMBL671612,CHEMBL671613,CHEMBL675646,CHEMBL675647,CHEMBL829799,CHEMBL829977,CHEMBL838598,CHEMBL864472,CHEMBL864475,CHEMBL884749&limit=1000",
+      "sha256": "79b42d70f189959d2c9a6c4a6d35c4bac53a947b4c19ac689c07ac4655d9a887"
+    },
+    "chembl-activities.json": {
+      "url": "https://www.ebi.ac.uk/chembl/api/data/activity.json?target_chembl_id=CHEMBL238&standard_type=Ki&standard_relation=%3D&standard_units=nM&limit=1000&order_by=activity_id",
+      "sha256": "b8ca2efc6157531c53ccaf737023760d355c9f1669e6e680087e157963b8334e"
+    },
+    "chembl-target.json": {
+      "url": "https://www.ebi.ac.uk/chembl/api/data/target/CHEMBL238.json",
+      "sha256": "beef0687e1b59e74e9a981962953b8a8432cf843a7108daf7fc35e60ebfc2bd8"
+    },
+    "europepmc-search.json": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22dopamine%20transporter%22%20AND%20OPEN_ACCESS:Y%20AND%20(human%20OR%20hDAT)%20AND%20FIRST_PDATE:%5B1900-01-01%20TO%202024-12-31%5D&format=json&pageSize=100&resultType=core",
+      "sha256": "8a53633a94efa3bd9b51ab7f94623aabff04ea6350d34bdb6bce15203c7c6930"
+    },
+    "PMC9124866.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9124866/fullTextXML",
+      "sha256": "fdf50534a253a860a936c6554d5a140f1a513677743742c0cfca618b31957d1e"
+    },
+    "PMC11324517.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11324517/fullTextXML",
+      "sha256": "0682ff327fd646065ffd56fd8d7fd0fc155077d10eb56ad484d977a565c8f58c"
+    },
+    "PMC5354487.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5354487/fullTextXML",
+      "sha256": "ca4d609f7fbfd01f79bfb1c43f1d366930bc570fca5ba40b326de6e004bcee2e"
+    },
+    "PMC8227285.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8227285/fullTextXML",
+      "sha256": "0701f0b94059a305afd966835fff8e3a20b507b0b74cbadb78c51f56df4d2d47"
+    },
+    "PMC11202288.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11202288/fullTextXML",
+      "sha256": "f73107f78883d1a6c45ba239ccdfd8175405704962dc9ccba75f92cb40dbdf5f"
+    },
+    "PMC4621520.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4621520/fullTextXML",
+      "sha256": "b4ac7399be8db31b9e0dd3d534c8a97105df51180539f71ae587d4251cf63b3e"
+    },
+    "PMC10020207.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10020207/fullTextXML",
+      "sha256": "325a57e92d98093644a627606d07af19264c97da88af289c040761852d182b35"
+    },
+    "PMC6028122.xml": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6028122/fullTextXML",
+      "sha256": "4c7d922ccf7a8fee06bc7c5a8d3bc1b5f22370ca96d325147799ab1ee9700988"
+    },
+    "correction-28455408.json": {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:28455408%20AND%20SRC:MED&format=json&resultType=core",
+      "sha256": "30a2d3b18109504f63f3d5eac8f40ee7da1b8c76f303a8b8772098b522e757f6"
+    }
+  }
+}

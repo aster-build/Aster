@@ -1,3 +1,3 @@
-import Dashboard from '@/components/Dashboard';
+import CampaignWorkflow from '@/components/workflow/CampaignWorkflow';
 export const metadata = { title: 'Aster · Campaign workspace' };
-export default function Page() { return <Dashboard />; }
+export default function Page() { return <CampaignWorkflow />; }

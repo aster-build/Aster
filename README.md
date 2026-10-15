@@ -232,3 +232,21 @@ Open [the local replay](http://127.0.0.1:3000/replay) after starting the dashboa
 ### Exploratory docking
 
 The dashboard inspector links to user-triggered DAT docking and 3D candidate/reference comparison. Five-seed redocking passed 4/5; cross-docking is untested and protein-only scoring omits ions. See [docking results and setup](docs/DOCKING.md).
+
+### Literature evidence retrieval — local workflow implemented
+
+Select a compound in the DAT demo to search exact-compound, analog, or general
+target evidence. The bounded corpus has 42 machine-audited source records from 15
+documents. Inspect citations and save evidence to a committed round without changing
+its predictions. Independent scientific review is still pending; milestone 8 is
+not yet complete.
+
+```sh
+.venv/bin/python scripts/fetch_literature_sources.py
+.venv/bin/python scripts/build_literature_corpus.py
+.venv/bin/python scripts/evaluate_literature.py
+.venv/bin/python scripts/build_literature_review.py
+```
+
+See [setup, API, results and limits](docs/LITERATURE_EVIDENCE.md) and the
+[independent review pack](output/literature-review/index.html).

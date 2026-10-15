@@ -1,0 +1,590 @@
+{
+  "version": "dat-questions-v1",
+  "independent_review": false,
+  "questions": [
+    {
+      "category": "target_context",
+      "query": "Which structure shows beta-CFT stabilizing an outward-open transporter?",
+      "expected_ids": [
+        "PMC11324517-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q01",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Where does MRS7292 bind relative to EL4 and TM1b?",
+      "expected_ids": [
+        "PMC11324517-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q02",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "How do sulfoxide modafinil analogs alter water in the binding pocket?",
+      "expected_ids": [
+        "PMC11202288-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q03",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Which simulations describe Asp421 and inward-facing hDAT?",
+      "expected_ids": [
+        "PMC11202288-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q04",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "What review covers phosphorylation palmitoylation and ubiquitination of DAT?",
+      "expected_ids": [
+        "PMC10020207-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q05",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Which overview discusses S1 S2 sites and DAT protein interactions?",
+      "expected_ids": [
+        "PMC10020207-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q06",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "What evidence supports sydnocarb as a noncompetitive inhibitor?",
+      "expected_ids": [
+        "PMC8227285-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q07",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Which sydnocarb study uses cysteine scanning accessibility experiments?",
+      "expected_ids": [
+        "PMC8227285-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q08",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Which hDAT variant I248Y improves thermostability?",
+      "expected_ids": [
+        "PMC6028122-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q09",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "How was hDAT purified in detergent micelles with stabilizing ligands?",
+      "expected_ids": [
+        "PMC6028122-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q10",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "How do copper and nickel affect substrate affinity in DAT?",
+      "expected_ids": [
+        "PMC5354487-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q11",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Which study describes biphasic zinc effects at 1 and 10 micromolar?",
+      "expected_ids": [
+        "PMC5354487-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q12",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Which ibogaine feature affects pharmacological chaperone efficacy?",
+      "expected_ids": [
+        "PMC9124866-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q13",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "What bupropion secondary amine modification affects chaperone activity?",
+      "expected_ids": [
+        "PMC9124866-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q14",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "How do six diverging NET binding-site residues affect selectivity?",
+      "expected_ids": [
+        "PMC4621520-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q15",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "target_context",
+      "query": "Do non-conserved central DAT residues determine inhibitor recognition?",
+      "expected_ids": [
+        "PMC4621520-abstract"
+      ],
+      "filters": {},
+      "id": "DAT-Q16",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL132683?",
+      "expected_ids": [
+        "chembl-activity-391046"
+      ],
+      "filters": {
+        "smiles": "COC(=O)C1C(c2ccc(O)c(O)c2)CC2CCC1N2C",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q17",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL132683?",
+      "expected_ids": [
+        "chembl-activity-417729"
+      ],
+      "filters": {
+        "smiles": "COC(=O)C1C(c2ccc(O)c(O)c2)CC2CCC1N2C",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q18",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL59?",
+      "expected_ids": [
+        "chembl-activity-421384"
+      ],
+      "filters": {
+        "smiles": "NCCc1ccc(O)c(O)c1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q19",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL370805?",
+      "expected_ids": [
+        "chembl-activity-422898"
+      ],
+      "filters": {
+        "smiles": "COC(=O)[C@H]1[C@@H](OC(=O)c2ccccc2)C[C@@H]2CC[C@H]1N2C",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q20",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL335423?",
+      "expected_ids": [
+        "chembl-activity-426639"
+      ],
+      "filters": {
+        "smiles": "COC(=O)C1C(c2ccc(OC)c(OC)c2)CC2CCC1N2C",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q21",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL119605?",
+      "expected_ids": [
+        "chembl-activity-638610"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(O)c(OC)ccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q22",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL325669?",
+      "expected_ids": [
+        "chembl-activity-639758"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(OC)c(O)ccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q23",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL326713?",
+      "expected_ids": [
+        "chembl-activity-656577"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(O)c(O)ccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q24",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL2029053?",
+      "expected_ids": [
+        "chembl-activity-657706"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1ccc(O[C@@H]2O[C@H](C(=O)O)[C@@H](O)[C@H](O)[C@H]2O)c2ccccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q25",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL332098?",
+      "expected_ids": [
+        "chembl-activity-659085"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2cc(O)ccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q26",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL324967?",
+      "expected_ids": [
+        "chembl-activity-666616"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(O)cccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q27",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL332097?",
+      "expected_ids": [
+        "chembl-activity-669132"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1ccc(O)c2ccccc12)c1cccs1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q28",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL365649?",
+      "expected_ids": [
+        "chembl-activity-1455581"
+      ],
+      "filters": {
+        "smiles": "CN1C2CCC1C(C(=O)OCCCF)C(c1ccc(Br)cc1)C2",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q29",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL184807?",
+      "expected_ids": [
+        "chembl-activity-1455591"
+      ],
+      "filters": {
+        "smiles": "O=C(OCCCF)C1C2CCC(CC1c1ccc(Br)cc1)N2",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q30",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL185608?",
+      "expected_ids": [
+        "chembl-activity-1458028"
+      ],
+      "filters": {
+        "smiles": "CN1C2CCC1C(C(=O)OCCF)C(c1ccc(Br)cc1)C2",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q31",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL186119?",
+      "expected_ids": [
+        "chembl-activity-1458127"
+      ],
+      "filters": {
+        "smiles": "O=C(OCCF)C1C2CCC(CC1c1ccc(Br)cc1)N2",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q32",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL186306?",
+      "expected_ids": [
+        "chembl-activity-1458131"
+      ],
+      "filters": {
+        "smiles": "O=C(OCCF)C1C2CCC(CC1c1ccc(I)cc1)N2",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q33",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL22183?",
+      "expected_ids": [
+        "chembl-activity-1488447"
+      ],
+      "filters": {
+        "smiles": "Cc1ccc(Sc2ccccc2CN(C)C)c(N)c1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q34",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL190700?",
+      "expected_ids": [
+        "chembl-activity-1488457"
+      ],
+      "filters": {
+        "smiles": "CN(C)Cc1ccccc1Sc1ccccc1N",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q35",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "exact_compound",
+      "query": "What Ki binding measurement is reported for CHEMBL190703?",
+      "expected_ids": [
+        "chembl-activity-1488461"
+      ],
+      "filters": {
+        "smiles": "C=Cc1ccc(Sc2ccccc2CN(C)C)c(N)c1",
+        "endpoint": "Ki"
+      },
+      "id": "DAT-Q36",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "lunar photovoltaic spectrometry",
+      "expected_ids": [],
+      "filters": {},
+      "id": "DAT-Q37",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "galactic neutrino oscillations",
+      "expected_ids": [],
+      "filters": {},
+      "id": "DAT-Q38",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "binding",
+      "expected_ids": [],
+      "filters": {
+        "target": "WRONG"
+      },
+      "id": "DAT-Q39",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "binding",
+      "expected_ids": [],
+      "filters": {
+        "species": "Mus musculus"
+      },
+      "id": "DAT-Q40",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "binding",
+      "expected_ids": [],
+      "filters": {
+        "cutoff": "1900-01-01"
+      },
+      "id": "DAT-Q41",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "binding",
+      "expected_ids": [],
+      "filters": {
+        "endpoint": "clinical_cure"
+      },
+      "id": "DAT-Q42",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "Ki",
+      "expected_ids": [],
+      "filters": {
+        "smiles": "[He]"
+      },
+      "id": "DAT-Q43",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "unanswerable",
+      "query": "binding",
+      "expected_ids": [],
+      "filters": {
+        "smiles": "O"
+      },
+      "id": "DAT-Q44",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "analog",
+      "query": "Ki binding affinity",
+      "expected_ids": [
+        "chembl-activity-426639"
+      ],
+      "filters": {
+        "smiles": "COC(=O)C1C(c2ccc(O)c(O)c2)CC2CCC1N2C",
+        "match": "analog"
+      },
+      "id": "DAT-Q45",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "analog",
+      "query": "Ki binding affinity",
+      "expected_ids": [
+        "chembl-activity-426639"
+      ],
+      "filters": {
+        "smiles": "COC(=O)C1C(c2ccc(O)c(O)c2)CC2CCC1N2C",
+        "match": "analog"
+      },
+      "id": "DAT-Q46",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "analog",
+      "query": "Ki binding affinity",
+      "expected_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "filters": {
+        "smiles": "COC(=O)C1C(c2ccc(OC)c(OC)c2)CC2CCC1N2C",
+        "match": "analog"
+      },
+      "id": "DAT-Q47",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "analog",
+      "query": "Ki binding affinity",
+      "expected_ids": [
+        "chembl-activity-639758",
+        "chembl-activity-656577",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(O)c(OC)ccc12)c1cccs1",
+        "match": "analog"
+      },
+      "id": "DAT-Q48",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "analog",
+      "query": "Ki binding affinity",
+      "expected_ids": [
+        "chembl-activity-638610",
+        "chembl-activity-656577",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(OC)c(O)ccc12)c1cccs1",
+        "match": "analog"
+      },
+      "id": "DAT-Q49",
+      "review_status": "pending_independent_review"
+    },
+    {
+      "category": "analog",
+      "query": "Ki binding affinity",
+      "expected_ids": [
+        "chembl-activity-638610",
+        "chembl-activity-639758",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "filters": {
+        "smiles": "CNCC[C@H](Oc1cccc2c(O)c(O)ccc12)c1cccs1",
+        "match": "analog"
+      },
+      "id": "DAT-Q50",
+      "review_status": "pending_independent_review"
+    }
+  ]
+}

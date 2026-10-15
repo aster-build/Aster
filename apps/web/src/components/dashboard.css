@@ -479,3 +479,46 @@
 /* Warm highlights complement the cornflower interaction color. */
 .history-note { background:var(--color-lemon-soft); border-color:var(--color-lemon); }
 .dot.ring { background:var(--color-accent-soft); border-color:var(--color-accent); }
+
+/* The campaign itself is the full-width workspace. */
+.workspace-active { background:white; }
+.workspace-active .workspace-main { max-width:none; padding:0; margin:0; }
+.workspace-active .campaign-window { border:0; border-radius:0; box-shadow:none; min-height:100dvh; }
+.campaign-topbar { display:flex; align-items:center; gap:18px; padding:18px 28px; border-bottom:1px solid var(--color-line); }
+.campaign-home { color:var(--color-muted); flex-shrink:0; }
+.campaign-topbar .campaign-picker { gap:3px; min-width:0; }
+.campaign-topbar .campaign-picker select { max-width:620px; font-size:20px; font-weight:500; letter-spacing:-.5px; }
+.campaign-topbar .campaign-picker>span { font-size:11px; }
+.campaign-top-actions { display:flex; align-items:center; gap:24px; font-size:12px; color:var(--color-muted); flex-shrink:0; }
+.campaign-contextbar { display:flex; align-items:center; flex-wrap:wrap; gap:16px 24px; padding:10px 28px; border-bottom:1px solid var(--color-line); }
+.campaign-counts { display:flex; align-items:center; gap:20px; flex:1; font-size:11px; color:var(--color-muted); }
+.campaign-counts strong { font-weight:500; font-size:14px; color:var(--color-ink); margin-right:3px; }
+.campaign-round { font-size:12px; color:var(--color-muted); }
+.workspace-active .dashboard-toolbar { padding:12px 28px; }
+.workspace-active .resizable-workspace .decision-grid { height:clamp(320px, calc(100dvh - 500px), var(--panel-height)); }
+.workspace-active .shortlist { height:clamp(100px, 18dvh, var(--table-height)); }
+.workspace-active .inspector-structure img { height:clamp(140px, 22dvh, 230px); }
+.workspace-active .demo-note { margin:0; padding:14px 28px; border-top:1px solid var(--color-line); }
+.workspace-active .results-panel,.workspace-active .lower-grid,.workspace-active .literature-panel { margin:24px 28px; }
+.workspace-active .workspace-footer { padding:20px 28px; }
+.workspace-active .banner { margin:0; border-radius:0; }
+@media(max-width:1050px) {
+ .campaign-counts { flex-basis:100%; }
+ .campaign-round { margin-right:auto; }
+}
+@media(max-width:750px) {
+ .campaign-topbar { flex-wrap:wrap; padding:16px; gap:12px; }
+ .campaign-topbar .campaign-picker { flex-basis:calc(100% - 40px); }
+ .campaign-topbar .campaign-picker select { font-size:16px; }
+ .campaign-top-actions { width:100%; justify-content:space-between; }
+ .campaign-contextbar { padding:12px 16px; gap:12px; }
+ .campaign-counts { flex-wrap:wrap; gap:8px 16px; }
+ .campaign-counts>span:last-child { flex-basis:100%; }
+ .campaign-round { width:100%; }
+ .workspace-active .dashboard-toolbar { padding:14px 16px; }
+ .workspace-active .resizable-workspace .decision-grid { height:auto; }
+ .workspace-active .shortlist { height:auto; }
+ .workspace-active .demo-note { padding:16px; flex-wrap:wrap; }
+ .workspace-active .results-panel,.workspace-active .lower-grid,.workspace-active .literature-panel { margin:20px 16px; }
+ .workspace-active .workspace-footer { padding:20px 16px; }
+}

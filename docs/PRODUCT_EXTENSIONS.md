@@ -1,8 +1,9 @@
 # Aster: dashboard integration, 3D evidence, and literature-assisted selection
 
 Planning update: 2026-10-13. Milestone 6 is now implemented locally in `apps/web/`
-and `aster/api.py`; see [DASHBOARD.md](DASHBOARD.md). The structural and literature
-extensions remain proposals. The scientific core is `aster/campaign.py`.
+and `aster/api.py`; see [DASHBOARD.md](DASHBOARD.md). Structural replay and exploratory docking are implemented locally; see
+[DOCKING.md](DOCKING.md). Literature retrieval now has a local workflow and a machine-audited pilot corpus; see
+[LITERATURE_EVIDENCE.md](LITERATURE_EVIDENCE.md). Independent scientific review remains unfinished; the implementation does not satisfy that gate yet. The scientific core is `aster/campaign.py`.
 
 ## 1. Reuse the existing prototype
 

@@ -1,0 +1,1658 @@
+{
+  "independent_review": false,
+  "milestone_complete": false,
+  "summary": {
+    "lexical": {
+      "mean_recall_at_10": 1.0,
+      "category_recall": {
+        "analog": 1.0,
+        "exact_compound": 1.0,
+        "target_context": 1.0
+      },
+      "correct_abstentions": 8,
+      "unanswerable_queries": 8,
+      "max_latency_ms": 584.76,
+      "engineering_gate_passed": true
+    },
+    "hybrid": {
+      "mean_recall_at_10": 1.0,
+      "category_recall": {
+        "analog": 1.0,
+        "exact_compound": 1.0,
+        "target_context": 1.0
+      },
+      "correct_abstentions": 8,
+      "unanswerable_queries": 8,
+      "max_latency_ms": 1055.574,
+      "engineering_gate_passed": true
+    }
+  },
+  "source_checks": [
+    {
+      "id": "PMC9124866-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC11324517-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC5354487-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC8227285-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC11202288-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC4621520-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC10020207-abstract",
+      "passed": true
+    },
+    {
+      "id": "PMC6028122-abstract",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-391046",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-417729",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-421384",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-422898",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-426639",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-638610",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-639758",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-656577",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-657706",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-659085",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-666616",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-669132",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1455581",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1455591",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1458028",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1458127",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1458131",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1488447",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1488457",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1488461",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1488590",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1488593",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1501581",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1501704",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1501707",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1501710",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1501713",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1501719",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1608914",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1608924",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1608969",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1655169",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1655172",
+      "passed": true
+    },
+    {
+      "id": "chembl-activity-1655173",
+      "passed": true
+    }
+  ],
+  "queries": [
+    {
+      "id": "DAT-Q01",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11324517-abstract",
+        "PMC10020207-abstract",
+        "PMC6028122-abstract",
+        "chembl-activity-1655172",
+        "PMC5354487-abstract",
+        "PMC9124866-abstract",
+        "PMC11202288-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704"
+      ],
+      "latency_ms": 2.634,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q02",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11324517-abstract",
+        "PMC10020207-abstract",
+        "PMC9124866-abstract",
+        "chembl-activity-638610",
+        "chembl-activity-656577",
+        "chembl-activity-657706",
+        "chembl-activity-639758",
+        "chembl-activity-659085",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 0.578,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q03",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11202288-abstract",
+        "PMC8227285-abstract",
+        "PMC11324517-abstract",
+        "PMC9124866-abstract",
+        "PMC4621520-abstract",
+        "PMC5354487-abstract",
+        "PMC10020207-abstract",
+        "PMC6028122-abstract",
+        "chembl-activity-1655169",
+        "chembl-activity-1655172"
+      ],
+      "latency_ms": 0.525,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q04",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11202288-abstract",
+        "PMC11324517-abstract",
+        "PMC6028122-abstract",
+        "PMC9124866-abstract",
+        "PMC8227285-abstract",
+        "PMC10020207-abstract",
+        "PMC5354487-abstract",
+        "PMC4621520-abstract",
+        "chembl-activity-638610",
+        "chembl-activity-656577"
+      ],
+      "latency_ms": 0.432,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q05",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC10020207-abstract",
+        "PMC4621520-abstract",
+        "PMC5354487-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898",
+        "chembl-activity-426639",
+        "chembl-activity-1655169"
+      ],
+      "latency_ms": 0.441,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q06",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC10020207-abstract",
+        "PMC5354487-abstract",
+        "PMC8227285-abstract",
+        "PMC9124866-abstract",
+        "PMC11324517-abstract",
+        "PMC4621520-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898"
+      ],
+      "latency_ms": 0.432,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q07",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC8227285-abstract",
+        "PMC4621520-abstract",
+        "PMC10020207-abstract",
+        "PMC11324517-abstract",
+        "PMC6028122-abstract",
+        "PMC11202288-abstract",
+        "PMC5354487-abstract",
+        "PMC9124866-abstract",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704"
+      ],
+      "latency_ms": 0.376,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q08",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC8227285-abstract",
+        "PMC11324517-abstract",
+        "chembl-activity-639758",
+        "chembl-activity-659085",
+        "chembl-activity-666616",
+        "chembl-activity-669132",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704",
+        "chembl-activity-1501707",
+        "chembl-activity-1501710"
+      ],
+      "latency_ms": 0.303,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q09",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC6028122-abstract",
+        "PMC11324517-abstract",
+        "PMC11202288-abstract"
+      ],
+      "latency_ms": 0.192,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q10",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC6028122-abstract",
+        "PMC11324517-abstract",
+        "PMC11202288-abstract",
+        "PMC5354487-abstract",
+        "PMC10020207-abstract",
+        "PMC9124866-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704",
+        "chembl-activity-1501707"
+      ],
+      "latency_ms": 0.443,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q11",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC5354487-abstract",
+        "PMC11324517-abstract",
+        "PMC10020207-abstract",
+        "chembl-activity-1655169",
+        "chembl-activity-1655172",
+        "chembl-activity-1655173",
+        "PMC8227285-abstract",
+        "PMC4621520-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 0.801,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q12",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC5354487-abstract",
+        "PMC11202288-abstract",
+        "PMC9124866-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898",
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 0.543,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q13",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC9124866-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract"
+      ],
+      "latency_ms": 0.233,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q14",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC9124866-abstract",
+        "chembl-activity-1455581",
+        "chembl-activity-1455591",
+        "chembl-activity-1458028",
+        "chembl-activity-1458127",
+        "chembl-activity-1458131",
+        "PMC8227285-abstract",
+        "PMC6028122-abstract",
+        "PMC10020207-abstract",
+        "chembl-activity-638610"
+      ],
+      "latency_ms": 0.439,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q15",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC4621520-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract",
+        "PMC10020207-abstract",
+        "PMC5354487-abstract",
+        "PMC6028122-abstract",
+        "chembl-activity-1608914",
+        "chembl-activity-1608924",
+        "chembl-activity-1608969",
+        "chembl-activity-638610"
+      ],
+      "latency_ms": 0.396,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q16",
+      "method": "lexical",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC4621520-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract",
+        "PMC10020207-abstract",
+        "PMC6028122-abstract",
+        "PMC5354487-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898"
+      ],
+      "latency_ms": 0.289,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q17",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 584.76,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q18",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 0.452,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q19",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-421384"
+      ],
+      "latency_ms": 0.308,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q20",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-422898"
+      ],
+      "latency_ms": 0.369,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q21",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 0.345,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q22",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-638610"
+      ],
+      "latency_ms": 0.346,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q23",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-639758"
+      ],
+      "latency_ms": 0.326,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q24",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-656577"
+      ],
+      "latency_ms": 0.317,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q25",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-657706"
+      ],
+      "latency_ms": 0.378,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q26",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-659085"
+      ],
+      "latency_ms": 0.321,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q27",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-666616"
+      ],
+      "latency_ms": 0.311,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q28",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 0.318,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q29",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1455581"
+      ],
+      "latency_ms": 0.331,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q30",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1455591"
+      ],
+      "latency_ms": 0.321,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q31",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1458028"
+      ],
+      "latency_ms": 0.313,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q32",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1458127"
+      ],
+      "latency_ms": 0.31,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q33",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1458131"
+      ],
+      "latency_ms": 0.304,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q34",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1488447"
+      ],
+      "latency_ms": 0.285,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q35",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1488457"
+      ],
+      "latency_ms": 0.286,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q36",
+      "method": "lexical",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1488461"
+      ],
+      "latency_ms": 0.304,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q37",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.139,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q38",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.133,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q39",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.173,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q40",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.157,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q41",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.161,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q42",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.158,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q43",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.171,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q44",
+      "method": "lexical",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.169,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q45",
+      "method": "lexical",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 47.839,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q46",
+      "method": "lexical",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 3.772,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q47",
+      "method": "lexical",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 3.635,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q48",
+      "method": "lexical",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-656577",
+        "chembl-activity-639758",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 3.588,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q49",
+      "method": "lexical",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-638610",
+        "chembl-activity-656577",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 3.496,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q50",
+      "method": "lexical",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-638610",
+        "chembl-activity-639758",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 3.543,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q01",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11324517-abstract",
+        "PMC10020207-abstract",
+        "PMC6028122-abstract",
+        "chembl-activity-1655172",
+        "PMC5354487-abstract",
+        "PMC9124866-abstract",
+        "PMC11202288-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704"
+      ],
+      "latency_ms": 1055.574,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q02",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11324517-abstract",
+        "PMC10020207-abstract",
+        "PMC9124866-abstract",
+        "chembl-activity-638610",
+        "chembl-activity-656577",
+        "chembl-activity-657706",
+        "chembl-activity-639758",
+        "chembl-activity-659085",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 20.017,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q03",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11202288-abstract",
+        "PMC8227285-abstract",
+        "PMC11324517-abstract",
+        "PMC9124866-abstract",
+        "PMC4621520-abstract",
+        "PMC5354487-abstract",
+        "PMC10020207-abstract",
+        "PMC6028122-abstract",
+        "chembl-activity-1655169",
+        "chembl-activity-1655172"
+      ],
+      "latency_ms": 20.009,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q04",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC11202288-abstract",
+        "PMC11324517-abstract",
+        "PMC6028122-abstract",
+        "PMC9124866-abstract",
+        "PMC8227285-abstract",
+        "PMC10020207-abstract",
+        "PMC5354487-abstract",
+        "PMC4621520-abstract",
+        "chembl-activity-638610",
+        "chembl-activity-656577"
+      ],
+      "latency_ms": 20.366,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q05",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC10020207-abstract",
+        "PMC4621520-abstract",
+        "PMC5354487-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898",
+        "chembl-activity-426639",
+        "chembl-activity-1655169"
+      ],
+      "latency_ms": 20.528,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q06",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC10020207-abstract",
+        "PMC8227285-abstract",
+        "PMC5354487-abstract",
+        "PMC9124866-abstract",
+        "PMC11324517-abstract",
+        "PMC4621520-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898"
+      ],
+      "latency_ms": 22.18,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q07",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC8227285-abstract",
+        "PMC4621520-abstract",
+        "PMC10020207-abstract",
+        "PMC11324517-abstract",
+        "PMC6028122-abstract",
+        "PMC11202288-abstract",
+        "PMC5354487-abstract",
+        "PMC9124866-abstract",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704"
+      ],
+      "latency_ms": 20.158,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q08",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC8227285-abstract",
+        "PMC11324517-abstract",
+        "chembl-activity-639758",
+        "chembl-activity-659085",
+        "chembl-activity-666616",
+        "chembl-activity-669132",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704",
+        "chembl-activity-1501707",
+        "chembl-activity-1501710"
+      ],
+      "latency_ms": 19.443,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q09",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC6028122-abstract",
+        "PMC11324517-abstract",
+        "PMC11202288-abstract"
+      ],
+      "latency_ms": 19.638,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q10",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC6028122-abstract",
+        "PMC11324517-abstract",
+        "PMC11202288-abstract",
+        "PMC5354487-abstract",
+        "PMC10020207-abstract",
+        "PMC9124866-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-1501581",
+        "chembl-activity-1501704",
+        "chembl-activity-1501707"
+      ],
+      "latency_ms": 20.301,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q11",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC5354487-abstract",
+        "PMC11324517-abstract",
+        "PMC10020207-abstract",
+        "chembl-activity-1655169",
+        "chembl-activity-1655172",
+        "chembl-activity-1655173",
+        "PMC8227285-abstract",
+        "PMC4621520-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 19.528,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q12",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC5354487-abstract",
+        "PMC11202288-abstract",
+        "PMC9124866-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898",
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 20.316,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q13",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC9124866-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract"
+      ],
+      "latency_ms": 18.776,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q14",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC9124866-abstract",
+        "chembl-activity-1455581",
+        "chembl-activity-1455591",
+        "chembl-activity-1458028",
+        "chembl-activity-1458127",
+        "chembl-activity-1458131",
+        "PMC8227285-abstract",
+        "PMC6028122-abstract",
+        "PMC10020207-abstract",
+        "chembl-activity-638610"
+      ],
+      "latency_ms": 19.897,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q15",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC4621520-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract",
+        "PMC10020207-abstract",
+        "PMC5354487-abstract",
+        "PMC6028122-abstract",
+        "chembl-activity-1608914",
+        "chembl-activity-1608924",
+        "chembl-activity-1608969",
+        "chembl-activity-638610"
+      ],
+      "latency_ms": 19.098,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q16",
+      "method": "hybrid",
+      "category": "target_context",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "PMC4621520-abstract",
+        "PMC11324517-abstract",
+        "PMC8227285-abstract",
+        "PMC10020207-abstract",
+        "PMC6028122-abstract",
+        "PMC5354487-abstract",
+        "chembl-activity-391046",
+        "chembl-activity-417729",
+        "chembl-activity-421384",
+        "chembl-activity-422898"
+      ],
+      "latency_ms": 19.042,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q17",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 2.015,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q18",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 1.72,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q19",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-421384"
+      ],
+      "latency_ms": 2.35,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q20",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-422898"
+      ],
+      "latency_ms": 1.838,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q21",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 1.498,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q22",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-638610"
+      ],
+      "latency_ms": 1.449,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q23",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-639758"
+      ],
+      "latency_ms": 1.509,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q24",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-656577"
+      ],
+      "latency_ms": 1.553,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q25",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-657706"
+      ],
+      "latency_ms": 1.563,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q26",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-659085"
+      ],
+      "latency_ms": 1.493,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q27",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-666616"
+      ],
+      "latency_ms": 1.587,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q28",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 1.554,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q29",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1455581"
+      ],
+      "latency_ms": 1.57,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q30",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1455591"
+      ],
+      "latency_ms": 1.484,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q31",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1458028"
+      ],
+      "latency_ms": 1.497,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q32",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1458127"
+      ],
+      "latency_ms": 1.946,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q33",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1458131"
+      ],
+      "latency_ms": 2.265,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q34",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1488447"
+      ],
+      "latency_ms": 2.438,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q35",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1488457"
+      ],
+      "latency_ms": 1.847,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q36",
+      "method": "hybrid",
+      "category": "exact_compound",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-1488461"
+      ],
+      "latency_ms": 1.732,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q37",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 21.285,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q38",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 22.056,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q39",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.61,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q40",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.267,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q41",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.234,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q42",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.216,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q43",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.275,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q44",
+      "method": "hybrid",
+      "category": "unanswerable",
+      "recall_at_10": null,
+      "abstention_correct": true,
+      "returned_ids": [],
+      "latency_ms": 0.243,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q45",
+      "method": "hybrid",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 26.804,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q46",
+      "method": "hybrid",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-426639"
+      ],
+      "latency_ms": 26.147,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q47",
+      "method": "hybrid",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-391046",
+        "chembl-activity-417729"
+      ],
+      "latency_ms": 25.131,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q48",
+      "method": "hybrid",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-656577",
+        "chembl-activity-639758",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 25.926,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q49",
+      "method": "hybrid",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-638610",
+        "chembl-activity-656577",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 24.794,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    },
+    {
+      "id": "DAT-Q50",
+      "method": "hybrid",
+      "category": "analog",
+      "recall_at_10": 1.0,
+      "abstention_correct": null,
+      "returned_ids": [
+        "chembl-activity-638610",
+        "chembl-activity-639758",
+        "chembl-activity-666616",
+        "chembl-activity-669132"
+      ],
+      "latency_ms": 24.814,
+      "snapshot_sha256": "ae721dcb5b9d1e180c0ef0e8b0502a5586c4d3d2b58a734e3876951245329161"
+    }
+  ],
+  "question_sha256": "b616c1080b6a1a503cc0ad71f9cff655c1150b835a42f69819eb308a14cac07e",
+  "protocol_sha256": "64dcfbd7410992621de34a410661b5f91410734d5ce3a7c2f804afbe8f6bd1c7",
+  "implementation_sha256": "c87d642fd56706d5284f5a26fdf6147b4df9fac62b559c4d02c8ba5c801f305c",
+  "evaluator_sha256": "2a47a24bb73719ea0f8ad8a7a5de745f2fc43ac78d4129c56801df0215eda5da"
+}
