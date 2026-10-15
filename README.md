@@ -8,6 +8,9 @@ The workspace app in `apps/web/` connects to the Python campaign backend at
 `/dashboard`; `/` redirects there. The landing page belongs exclusively to the
 separate `../aster-hero` repository and site.
 
+<img width="2659" height="1674" alt="aster-3d-docking" src="https://github.com/user-attachments/assets/636a7ff1-9cd9-4f7a-a13e-c4e5fe115730" />
+
+
 ## Open the connected dashboard
 
 ```sh
