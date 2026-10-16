@@ -235,13 +235,28 @@ was the preceding milestone. A thin campaign/dashboard workflow is next.
 
 ## Does external evidence improve selection?
 
-No, on the evidence so far. Milestone 9 compared campaign-only selection against
+Not the evidence we can get. Milestone 9 compared campaign-only selection against
 literature-augmented selection and an information-matched control whose evidence values
-were scrambled, over 120 paired replays on the dopamine transporter. The predeclared
-gate failed: a gain of 0.40 top-decile compounds per 40 picks against a required 1.0,
-and 0.20 of that reproduced by the scrambled control. Evidence therefore stays attached
-to decisions for a human to read and out of the ranking. Design, leakage handling and
-full numbers: [EVIDENCE_SELECTION.md](docs/EVIDENCE_SELECTION.md).
+were scrambled, over 120 paired replays on the dopamine transporter. The predeclared gate
+failed: a gain of 0.40 top-decile compounds per 40 picks against a required 1.0, and 0.20
+of that reproduced by the scrambled control. Repeated with four times the seeds, that gain
+falls to 0.03.
+
+A retest on nine targets then swept the one thing milestone 9 could not control, how much
+evidence there was, by withholding measurements from the replay task and handing them back
+as evidence. Over 864 paired cases, 12 supplied structures change nothing, 50 are worth
++1.2 to +2.3 top-decile compounds per 40 picks and 150 are worth +1.6 to +2.8. So supply
+was the limit, not the idea. But a sensitivity run settles it the other way: perturbing
+those values by the disagreement a literature corpus carries between sources, about 0.68
+log units, removes the gain and makes it negative, while single-laboratory precision
+(0.29) keeps about two thirds of it.
+
+Evidence therefore stays attached to decisions for a human to read, and out of the
+ranking. Ranking-grade evidence would mean 50 or more measurements of pool-external
+structures at one laboratory's precision, which is a collaborator's assay history rather
+than a public corpus. Design, leakage rules and full numbers:
+[EVIDENCE_RETEST.md](docs/EVIDENCE_RETEST.md), with the original study at
+[EVIDENCE_SELECTION.md](docs/EVIDENCE_SELECTION.md).
 
 ## Source and attribution
 

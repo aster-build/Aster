@@ -1,6 +1,6 @@
 # Aster roadmap
 
-Updated: 2026-10-16. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation and expanded structural analysis remain proposed below. The controlled evidence-augmented selection study (milestone 9, first hypothesis) has now been run on one target and returned a null result: evidence augmentation did not meet its predeclared gate, so evidence stays out of the ranking. Milestone 8 has a working local literature workflow and machine-audited pilot corpus; independent scientific review remains unfinished.
+Updated: 2026-10-16. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation and expanded structural analysis remain proposed below. The controlled evidence-augmented selection study (milestone 9, first hypothesis) has now been run on one target and returned a null result, and a retest on nine targets with evidence supply swept has explained it: supplied measurements do improve selection above about 50 pool-external structures, but only at single-laboratory value precision, and at literature-grade precision they are worse than nothing. Evidence stays out of the ranking. Milestone 8 has a working local literature workflow and machine-audited pilot corpus; independent scientific review remains unfinished.
 
 ### Direction A — the decision record (2026-10-16)
 
@@ -58,6 +58,58 @@ See [EVIDENCE_SELECTION.md](docs/EVIDENCE_SELECTION.md) for the design, the leak
 handling and the full numbers. This is a null result on one target with twelve permitted
 compounds: it does not establish that literature evidence cannot help selection, only
 that this corpus at this size does not move this selector.
+
+The retest below supersedes that last sentence: with supply held at twelve structures
+the null is confirmed and tighter, and with supply swept the limit turns out to be the
+corpus, not the idea. See [EVIDENCE_RETEST.md](docs/EVIDENCE_RETEST.md).
+
+### Milestone 9 retest — supply and precision separated on nine targets (2026-10-16)
+
+- [x] Add paired power accounting as a reusable module,
+  [aster/evidence_power.py](aster/evidence_power.py): minimum detectable effect, achieved
+  power, cases required for a declared effect, and the largest effect a null rules out.
+  Any study's `case_metrics.csv` can be read with it.
+- [x] **Milestone 9 was adequately powered for its own gate**, with 84% power against
+  +1.0 and a minimum detectable effect of 0.95 over 40 cases. Its null ruled out gains
+  above +1.07 and said nothing below that: +0.5 would have needed 145 cases.
+- [x] Repeat milestone 9 unchanged with 40 seeds instead of 10
+  ([configs/evidence-v1-extended.json](configs/evidence-v1-extended.json)), 160 paired
+  cases. The literature arm fell to **+0.03** (CI −0.34 to +0.39). The original +0.40 was
+  split noise, and gains above +0.39 are now ruled out for that corpus.
+- [x] Predeclare and run the supply retest
+  ([configs/evidence-supply-v1.json](configs/evidence-supply-v1.json),
+  [aster/evidence_supply.py](aster/evidence_supply.py)): measurements are withheld from
+  the replay task and handed back as evidence, so supply is a controlled variable. 9
+  targets × 2 protocols × 2 donor regimes × 3 supply levels × 8 seeds = **864 paired
+  cases per arm**, minimum detectable effect 0.50.
+- [x] **Supply binds below about 50 structures.** At 12 supplied structures the gain is
+  +0.29 random / +0.23 scaffold-disjoint, both intervals spanning zero, matching the
+  literature arm. At 50 it is +2.35 / +1.15 and at 150 **+2.80 / +1.61**; the gate passes
+  in both regimes. The permuted control at 150 costs −8.54, so the gain is not an artifact
+  of extra training rows. Seven of nine targets gain.
+- [x] **Value precision binds at literature quality** (post-hoc sensitivity analysis,
+  [configs/evidence-supply-v1-noise.json](configs/evidence-supply-v1-noise.json), 576
+  paired cases). Perturbing donor values by same-laboratory spread (0.29 log units) keeps
+  about two thirds of the gain, +1.83 / +1.04 at 150. Perturbing by cross-source spread
+  (0.68 log units, what a literature corpus carries) removes it: **−0.99 / −1.88**, the
+  scaffold-disjoint figure significantly worse than adding nothing.
+- [x] **Decision: evidence stays out of the ranking, for a revised reason.** A larger
+  literature corpus would not have rescued milestone 9. Ranking-grade evidence means 50+
+  pool-external structures at single-laboratory precision on the campaign's endpoint,
+  which describes a collaborator's assay history rather than a public corpus. Corpus
+  expansion remains worthwhile for the decision record, where values are shown with their
+  provenance and never averaged into a prediction.
+- [x] **Decision: do not prepare a second docking pocket for selection yet.** The retest's
+  paired-difference standard deviation is 5.26, so a structural arm needs 219 cases to
+  detect +1.0 and 892 to detect +0.5. One new pocket on one structure yields one target,
+  16 cases, enough to detect only +3.94. A docking arm has to span several targets' pools
+  to be readable at all.
+- [ ] Still unmet: no temporal holdout (these datasets carry no measurement dates), one
+  benchmark collection, one endpoint family, no measured inactives. Donor measurements are
+  cleaner than any real corpus, so every figure above is an upper bound.
+
+See [EVIDENCE_RETEST.md](docs/EVIDENCE_RETEST.md) for the designs, the leakage rules, the
+per-target breakdown and the power accounting.
 
 ### Milestone 8 — local literature workflow implemented; independent review pending (2026-10-14)
 
