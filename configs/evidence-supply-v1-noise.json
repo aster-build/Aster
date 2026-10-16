@@ -1,0 +1,136 @@
+{
+  "version": "evidence-supply-v1-noise",
+  "question": "The supply study used donor values exactly as curated. Real external measurements of one quantity disagree between sources. Does the supply gain survive that disagreement?",
+  "hypothesis": "If the gain from supplied measurements is robust to realistic cross-source value noise, adding Gaussian noise of the published inter-source spread to donor values leaves a gain that still clears the milestone 9 gate.",
+  "design": "Post-hoc sensitivity analysis, added after the primary supply result was read. It is declared as such: the noise levels and the gate were fixed before this run but after the primary run, so it tests robustness of an observed effect rather than a pre-registered hypothesis.",
+  "tasks": {
+    "CHEMBL1862_Ki": "c69adcbb021591ba2c564df1e9eb55d465b3c51e78d0237ec0527942eb20cfdb",
+    "CHEMBL1871_Ki": "49d7f824fdbbc1c87fc69e239934558ac7e8612ca4c7e034314600b0b7c51821",
+    "CHEMBL2034_Ki": "9b9f4cca381cfd9e240603b0af24d9de742e421b984daf08c7c2458132eb3e4b",
+    "CHEMBL214_Ki": "6d412099986b7b9769d878a6fd9a6cf137f257455a87610a4f35b00daa86758f",
+    "CHEMBL238_Ki": "305d33df171e112c1cd75855c12377b0096e4e3726b910339169b1ab982a2c05",
+    "CHEMBL262_Ki": "8b6df9f67a87855d4fda89d1bd977cf2f3b71327387d2e0ba6c8673640fb94dd",
+    "CHEMBL287_Ki": "e857875848bb64dc6e327e6c42fe9fd36526bbee1b976de4521b55c4c6629894",
+    "CHEMBL4005_Ki": "1483dad125d5d37719c5524d6b63bac93be6e7114f892a0d131ebc35f72632f7",
+    "CHEMBL4203_Ki": "f056efe7d24b98b789281ec07adb7a0118683ba5d8833c9fa296ddf8b438e3b2"
+  },
+  "endpoint": "Ki",
+  "endpoint_scale": "pKi",
+  "donor_modes": [
+    "donor_random",
+    "donor_scaffold_disjoint"
+  ],
+  "donor_counts": [
+    50,
+    150
+  ],
+  "protocols": [
+    "published",
+    "scaffold_transfer"
+  ],
+  "support_sizes": [
+    32
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "rounds": 5,
+  "batch_size": 8,
+  "ridge_alpha": 10.0,
+  "scaling": "standard",
+  "radius": 2,
+  "bits": 2048,
+  "chirality": true,
+  "prediction_guard": "task_measured_range_plus_sd",
+  "hit_threshold_pki": 7.0,
+  "primary_metric": "Top-decile pool recovery after 5 rounds of 8 picks, as in milestone 9. The decile cutoff is the 90th percentile of pool values, computed by the evaluator after the replay has finished.",
+  "primary_metric_column": "top_decile_found",
+  "secondary_metrics": [
+    "additional_hits",
+    "audit_mae",
+    "novel_scaffolds"
+  ],
+  "arms": [
+    {
+      "id": "baseline",
+      "evidence": "none",
+      "description": "Morgan + ridge on campaign measurements only, on the donor-removed task."
+    },
+    {
+      "id": "donor_evidence",
+      "evidence": "donor_measurements",
+      "description": "Donor measurements appended exactly as curated; the ceiling arm repeated here for pairing."
+    },
+    {
+      "id": "donor_evidence_same_lab_noise",
+      "evidence": "donor_measurements_noisy",
+      "value_noise_sd": 0.29,
+      "description": "Donor values perturbed by 0.29 log units, the upper end of same-laboratory reproducibility reported by Kalliokoski et al. 2013 for ChEMBL activity data."
+    },
+    {
+      "id": "donor_evidence_cross_source_noise",
+      "evidence": "donor_measurements_noisy",
+      "value_noise_sd": 0.68,
+      "description": "Donor values perturbed by 0.68 log units, the inter-source spread the same study reports for the same quantity aggregated across publications. This is the noise a literature corpus would carry."
+    }
+  ],
+  "arms_not_run": [
+    {
+      "id": "structural_descriptor",
+      "reason": "Deferred until this study shows whether exact same-assay measurements help at all. Docking covers one pocket of one structure (8Y2G), so a structural arm needs a new pocket or structure prepared and validated first. A null here bounds what a noisier structural descriptor of the same supply could deliver, which is the cheaper question to answer first."
+    },
+    {
+      "id": "learned_retrieval",
+      "reason": "Roadmap directs that it follow a demonstrated gain from frozen retrieval."
+    }
+  ],
+  "leakage_rules": {
+    "donor_removal": "Donors are removed from the task before the split, so no donor structure can appear in the support, pool or audit set. The run aborts if a donor identity remains in the task.",
+    "scaffold_disjoint": "In the donor_scaffold_disjoint regime donors are drawn as whole Murcko scaffold groups and the run aborts if any donor scaffold remains in the task, so donor and task chemotypes are disjoint.",
+    "donor_selection": "Donor choice reads structure and scaffold metadata only, never values, cliff flags or published partitions.",
+    "evaluation": "Pool decile cutoffs and audit outcomes are read only after each replay has finished.",
+    "temporal": "Not satisfied. MoleculeACE tasks carry no measurement dates, so no publication cutoff can separate earlier from later measurements. A temporal holdout requires BindingDB with dates and is recorded as the next data addition, not as a control met here."
+  },
+  "power_assumption": {
+    "paired_difference_sd": 2.085,
+    "source": "Standard deviation of the 40 paired top-decile differences in the milestone 9 literature arm (artifacts/evidence-v1/case_metrics.csv).",
+    "planned_cases": 576,
+    "planned_cases_arithmetic": "9 tasks x 2 protocols x 2 donor regimes x 2 supply levels x 8 seeds = 576 cases per arm; 144 cases per regime per supply level."
+  },
+  "declared_effects": [
+    1.0,
+    0.5,
+    0.25
+  ],
+  "alpha": 0.05,
+  "target_power": 0.8,
+  "analysis": "Paired per-case differences against the baseline arm on the same split, seed, donor set and budget. Report the mean paired difference, its 95 percent confidence interval, the minimum detectable effect at the cases actually run, the per-target and per-supply breakdown, and the largest effect the interval does not rule out. The gate is read on the highest supply level within each donor regime.",
+  "promotion_gate": {
+    "mean_top_decile_gain_min": 1.0,
+    "control_separation_min": 1.0,
+    "evidence_arm": "donor_evidence",
+    "control_arm": "shuffled_control",
+    "meaning": "Same thresholds as milestone 9 and the primary supply study. The question here is whether the noisy arms still clear them."
+  },
+  "interpretation_declared_in_advance": {
+    "noisy_arms_pass": "The supply gain is robust to literature-grade value noise; a real corpus of that size is worth building.",
+    "noisy_arms_fail_exact_arm_passes": "The gain depends on value precision the literature does not have. Curation quality, not corpus size alone, decides whether evidence helps.",
+    "all_arms_fail": "The primary result does not replicate under this run's seeds; treat it as unstable."
+  },
+  "declared_limitations": [
+    "Donor measurements come from the same curated dataset as the task, so they are cleaner and better matched than any real external corpus. This makes the study an upper bound, not a simulation of literature evidence.",
+    "Nine Ki tasks from one benchmark collection; no ADMET endpoint, no assay with a different unit or dynamic range, and no measured inactives.",
+    "No temporal holdout, so this does not answer whether a decision would have been right at the time it was made.",
+    "Donor removal shrinks each task, so absolute recovery counts are not comparable to milestone 1 to 4 results; only the within-case paired differences are.",
+    "A null result bounds the value of appending evidence as training rows to this selector. It does not test evidence used for filtering, weighting, or as a separate model.",
+    "Gaussian noise of a fixed spread is a crude stand-in for real disagreement, which is skewed, assay-dependent and correlated within a source.",
+    "This is a post-hoc analysis of an effect already observed, not an independent test of it."
+  ]
+}
