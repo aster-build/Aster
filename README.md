@@ -28,9 +28,36 @@ is the Python backend package. `apps/web/` is the Next.js frontend.
 
 ## Use the campaign workflow
 
-The newest milestone is a persistent local campaign, using greedy Morgan + ridge
-as the provisional default. See [the workflow guide](docs/CAMPAIGN_WORKFLOW.md)
-for CSV schemas, commands, constraints, and recovery behavior.
+A persistent local campaign, using greedy Morgan + ridge as the provisional default.
+See [the workflow guide](docs/CAMPAIGN_WORKFLOW.md) for CSV schemas, commands,
+constraints, and recovery behavior.
+
+A campaign declares its own endpoint: any endpoint name, its unit, and whether larger
+or smaller measurements are better. One exact number per compound, one assay per
+campaign. Ranking, exports and the stored rounds follow that declaration.
+
+```sh
+.venv/bin/python -m aster.campaign --db campaign.sqlite create \
+  --name "Microsomal stability" --assay "HLM clearance" \
+  --endpoint clearance --unit "mL/min/kg" --direction lower_is_better \
+  --measured measured.csv --candidates candidates.csv
+```
+
+## Ask why a compound was tested
+
+Every pick is readable afterwards as a decision joined to its basis and its outcome:
+the rank it held in the full ranked slate, the policy that produced the batch, the
+prediction, the nearest measured analog at the time, the training snapshot hash and
+model version behind it, the measured result, and whether it beat the best value known
+when the pick was made.
+
+```sh
+.venv/bin/python -m aster.decisions --db campaign.sqlite why COMPOUND_ID
+.venv/bin/python -m aster.decisions --db campaign.sqlite review
+```
+
+See [the decision record](docs/DECISION_RECORD.md) for the fields, the HTTP endpoints
+and the limits of what `review` can claim.
 
 ```sh
 .venv/bin/python -m aster.campaign --help
@@ -205,6 +232,31 @@ MPLCONFIGDIR=.mplconfig .venv/bin/python scripts/build_milestone_posters.py
 
 The latest approach is reliability-aware experiment selection; neural fine-tuning
 was the preceding milestone. A thin campaign/dashboard workflow is next.
+
+## Does external evidence improve selection?
+
+Not the evidence we can get. Milestone 9 compared campaign-only selection against
+literature-augmented selection and an information-matched control whose evidence values
+were scrambled, over 120 paired replays on the dopamine transporter. The predeclared gate
+failed: a gain of 0.40 top-decile compounds per 40 picks against a required 1.0, and 0.20
+of that reproduced by the scrambled control. Repeated with four times the seeds, that gain
+falls to 0.03.
+
+A retest on nine targets then swept the one thing milestone 9 could not control, how much
+evidence there was, by withholding measurements from the replay task and handing them back
+as evidence. Over 864 paired cases, 12 supplied structures change nothing, 50 are worth
++1.2 to +2.3 top-decile compounds per 40 picks and 150 are worth +1.6 to +2.8. So supply
+was the limit, not the idea. But a sensitivity run settles it the other way: perturbing
+those values by the disagreement a literature corpus carries between sources, about 0.68
+log units, removes the gain and makes it negative, while single-laboratory precision
+(0.29) keeps about two thirds of it.
+
+Evidence therefore stays attached to decisions for a human to read, and out of the
+ranking. Ranking-grade evidence would mean 50 or more measurements of pool-external
+structures at one laboratory's precision, which is a collaborator's assay history rather
+than a public corpus. Design, leakage rules and full numbers:
+[EVIDENCE_RETEST.md](docs/EVIDENCE_RETEST.md), with the original study at
+[EVIDENCE_SELECTION.md](docs/EVIDENCE_SELECTION.md).
 
 ## Source and attribution
 

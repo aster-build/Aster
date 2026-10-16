@@ -23,6 +23,10 @@ SCHEMA = 1
 RECIPE = {"model": "Morgan + ridge", "radius": 2, "bits": 2048,
           "chirality": True, "scaling": "standard", "alpha": 10,
           "policy": "greedy", "minimum_measured": 32}
+DIRECTIONS = ('higher_is_better', 'lower_is_better')
+# A prediction is flagged when it lies this many observed standard deviations
+# beyond the measured range. It is a diagnostic, not a calibrated bound.
+EXTRAPOLATION_MARGIN = 1.0
 
 
 def encoded(value):
@@ -55,7 +59,8 @@ def value_number(text):
     try:
         value = float(text)
     except (TypeError, ValueError):
-        raise ValueError("Measurements must be exact numeric pKi or pIC50; censored values are unsupported") from None
+        raise ValueError('Measurements must be exact numbers on the declared endpoint; '
+                         'censored values are unsupported') from None
     if not math.isfinite(value):
         raise ValueError("Measurements must be finite")
     return value
@@ -96,9 +101,29 @@ def load(path):
         return state
 
 
-def create(path, measured, candidates, *, name, assay, endpoint):
-    if endpoint not in ('pKi', 'pIC50') or not name.strip() or not assay.strip():
-        raise ValueError('Require a campaign name, single assay identifier, and pKi or pIC50 endpoint')
+def declaration(state):
+    """Any endpoint, any assay, one number per compound.
+
+    Campaigns created before endpoints were declared carry a log-potency endpoint
+    where larger is better, which is what this workflow assumed at the time.
+    """
+    return {'endpoint': state['endpoint'], 'unit': state.get('unit', ''),
+            'direction': state.get('direction', 'higher_is_better')}
+
+
+def better(state):
+    """+1 when larger measurements are better, -1 when smaller ones are."""
+    return 1.0 if declaration(state)['direction'] == 'higher_is_better' else -1.0
+
+
+def create(path, measured, candidates, *, name, assay, endpoint, unit='', direction='higher_is_better'):
+    endpoint, unit = endpoint.strip(), unit.strip()
+    if not endpoint or len(endpoint) > 100 or any(ord(c) < 32 for c in endpoint + unit) or len(unit) > 60:
+        raise ValueError('Require a printable endpoint name of at most 100 characters')
+    if direction not in DIRECTIONS:
+        raise ValueError(f"Declare which direction is better: {' or '.join(sorted(DIRECTIONS))}")
+    if not name.strip() or not assay.strip():
+        raise ValueError('Require a campaign name and a single assay identifier')
     observations, mh = read_csv(measured, ['compound_id', 'smiles', 'value'])
     pool, ph = read_csv(candidates, ['compound_id', 'smiles'])
     if len(observations) < RECIPE['minimum_measured']:
@@ -115,9 +140,10 @@ def create(path, measured, candidates, *, name, assay, endpoint):
                               'value': value_number(row['value']) if status == 'measured' else None,
                               'constraint': 'available'}
     state = {'schema': SCHEMA, 'name': name.strip(), 'assay': assay.strip(), 'endpoint': endpoint,
-             'created_at': stamp(), 'recipe': RECIPE, 'compounds': compounds, 'rounds': [], 'events': []}
+             'unit': unit, 'direction': direction, 'created_at': stamp(), 'recipe': RECIPE, 'compounds': compounds, 'rounds': [], 'events': []}
     event(state, 'create', {'measured_sha256': mh, 'candidates_sha256': ph,
-                            'initial_count': len(observations), 'candidate_count': len(pool)})
+                            'initial_count': len(observations), 'candidate_count': len(pool),
+                            'endpoint': endpoint, 'unit': unit, 'direction': direction})
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents overwriting an existing campaign.
@@ -174,22 +200,37 @@ def propose(path, batch_size=8):
         if not np.isfinite(predictions).all():
             raise ValueError('Nonfinite predictions; no batch was saved')
         by_id = {cid: i for i, cid in enumerate(pool)}
-        ranked = sorted((cid for cid in pool if cid not in locked), key=lambda cid: (-predictions[by_id[cid]], cid))
+        sign = better(state)
+        ranked = sorted((cid for cid in pool if cid not in locked),
+                        key=lambda cid: (-sign * predictions[by_id[cid]], cid))
+        margin = EXTRAPOLATION_MARGIN * float(np.std(y)) if len(y) > 1 else 0.0
+        low, high = float(y.min()) - margin, float(y.max()) + margin
         selected = locked + ranked[:batch_size-len(locked)]
+        # The full ranked slate records what was considered and rejected, not only the picks.
+        slate = [{'rank': rank, 'compound_id': cid, 'prediction': predictions[by_id[cid]],
+                  'selected': cid in selected}
+                 for rank, cid in enumerate(sorted(pool, key=lambda c: (-sign * predictions[by_id[c]], c)), 1)]
         rows = []
         for rank, cid in enumerate(selected, 1):
             i = by_id[cid]
             neighbour = neighbours[i]
             rows.append({'rank': rank, 'compound_id': cid, 'smiles': compounds[cid]['smiles'],
-                         'prediction': predictions[i], 'selection_reason': 'user_locked' if cid in locked else 'highest_prediction',
+                         'prediction': predictions[i], 'selection_reason': 'user_locked' if cid in locked else 'best_prediction',
                          'nearest_measured_id': neighbour, 'nearest_measured_value': compounds[neighbour]['value'],
-                         'similarity': similarities[i], 'outside_diagnostic_range': not 0 <= predictions[i] <= 14})
+                         'similarity': similarities[i],
+                         'outside_diagnostic_range': not low <= predictions[i] <= high})
         coef, intercept = model.linear_coefficients()
         snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
         round_record = {'round': len(state['rounds']) + 1, 'created_at': stamp(), 'status': 'pending',
                         'training': snapshot, 'training_sha256': hashlib.sha256(encoded(snapshot).encode()).hexdigest(),
                         'eligible_ids': pool, 'constraints': {cid: compounds[cid]['constraint'] for cid in pool},
-                        'recommendations': rows, 'results': {}, 'recipe': state['recipe'],
+                        'recommendations': rows, 'slate': slate, 'results': {}, 'recipe': state['recipe'],
+                        'policy': {'id': state['recipe']['policy'], 'rule': 'rank by predicted value in the declared direction',
+                                   'locked': locked, 'excluded': sorted(cid for cid, c in compounds.items()
+                                                                        if c['constraint'] == 'excluded')},
+                        'declaration': declaration(state),
+                        'diagnostic_range': {'low': low, 'high': high,
+                                             'basis': 'measured range extended by one standard deviation'},
                         'model': {'coefficients': coef.tolist(), 'intercept': intercept},
                         'versions': {p: importlib.metadata.version(p) for p in ('rdkit', 'numpy', 'scikit-learn')},
                         'source_sha256': {p: hashlib.sha256(Path(__file__).with_name(p).read_bytes()).hexdigest()
@@ -240,7 +281,7 @@ def export_batch(path, round_number, destination, template=False):
     if template:
         rows = [{'compound_id': row['compound_id'], 'status': '', 'value': ''} for row in rows]
     else:
-        rows = [{**row, 'endpoint': state['endpoint'], 'assay': state['assay']} for row in rows]
+        rows = [{**row, **declaration(state), 'assay': state['assay']} for row in rows]
     # Machine-readable CSV preserves exact IDs for round trips.
     with Path(destination).open('x', newline='') as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
@@ -252,7 +293,7 @@ def summary(path):
     state = load(path)
     counts = {status: sum(c['status'] == status for c in state['compounds'].values())
               for status in ('measured', 'available', 'pending', 'failed')}
-    return {'name': state['name'], 'assay': state['assay'], 'endpoint': state['endpoint'],
+    return {'name': state['name'], 'assay': state['assay'], **declaration(state),
             'counts': counts, 'rounds': [{'round': r['round'], 'status': r['status'],
                                          'training_count': len(r['training']), 'results': len(r['results'])}
                                         for r in state['rounds']],
@@ -261,13 +302,17 @@ def summary(path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Aster local campaign workflow (one assay, higher pKi/pIC50 is better)')
+    parser = argparse.ArgumentParser(
+        description='Aster local campaign workflow: one assay, one declared endpoint, one number per compound')
     parser.add_argument('--db', required=True, type=Path)
     commands = parser.add_subparsers(dest='command', required=True)
     init = commands.add_parser('create')
     for key in ('name', 'assay', 'measured', 'candidates'):
         init.add_argument('--'+key, required=True)
-    init.add_argument('--endpoint', choices=['pKi', 'pIC50'], required=True)
+    init.add_argument('--endpoint', required=True, help='Endpoint name, for example pKi, pIC50, percent_inhibition or clearance')
+    init.add_argument('--unit', default='', help='Unit of the measured values, if the endpoint has one')
+    init.add_argument('--direction', choices=list(DIRECTIONS), default='higher_is_better',
+                      help='Whether larger or smaller measurements are better for this endpoint')
     constraints = commands.add_parser('constrain')
     constraints.add_argument('mode', choices=['available', 'locked', 'excluded'])
     constraints.add_argument('ids', nargs='+')
@@ -286,7 +331,8 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == 'create':
-            create(args.db, args.measured, args.candidates, name=args.name, assay=args.assay, endpoint=args.endpoint)
+            create(args.db, args.measured, args.candidates, name=args.name, assay=args.assay,
+                   endpoint=args.endpoint, unit=args.unit, direction=args.direction)
             output = summary(args.db)
         elif args.command == 'constrain':
             constrain(args.db, args.ids, args.mode)

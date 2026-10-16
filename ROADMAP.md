@@ -1,6 +1,115 @@
 # Aster roadmap
 
-Updated: 2026-10-14. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation, expanded structural analysis, and a controlled evidence-augmented selection study remain proposed below. Milestone 8 has a working local literature workflow and machine-audited pilot corpus; independent scientific review remains unfinished.
+Updated: 2026-10-16. Status: baseline, broader evaluation, and stable-head transfer evaluation completed; bounded encoder fine-tuning and reliability-aware selection pilots completed. A local campaign workflow is completed; the existing prototype is now integrated locally; the first 3D structural evidence, decision replay, and exploratory user-triggered docking are implemented. Independent docking transfer validation and expanded structural analysis remain proposed below. The controlled evidence-augmented selection study (milestone 9, first hypothesis) has now been run on one target and returned a null result, and a retest on nine targets with evidence supply swept has explained it: supplied measurements do improve selection above about 50 pool-external structures, but only at single-laboratory value precision, and at literature-grade precision they are worse than nothing. Evidence stays out of the ranking. Milestone 8 has a working local literature workflow and machine-audited pilot corpus; independent scientific review remains unfinished.
+
+### Direction A — the decision record (2026-10-16)
+
+The product bet that milestone 9's null result supports: make Aster the system of record
+for experimental decisions, for any endpoint and any assay, with one number per compound.
+
+- [x] An endpoint is declared per campaign — name, unit, and whether higher or lower is
+  better — instead of a hard-coded choice between two potency scales. Ranking, exports,
+  stored rounds and the API follow the declaration; campaigns created before it still load.
+- [x] The extrapolation diagnostic is no longer potency-specific: a prediction is flagged
+  against the campaign's measured range extended by one standard deviation, and each round
+  stores the range it used.
+- [x] Each round stores the **full ranked slate** with every prediction and whether it was
+  selected, plus the policy, locks and exclusions in force, so the record shows what was
+  rejected and not only what was picked.
+- [x] `aster.decisions` answers "why did we test this, and were we right?" for a compound,
+  and `review` reports how the picks turned out, both over the CLI and at
+  `/campaigns/{id}/decisions`. Every number is read from what was stored at decision time.
+- [x] A pick with no result reads `awaiting_result` and a failed assay reads `no_result`;
+  neither is silently scored. Compounds never picked are explained, not invented.
+- [ ] **Censored values are still unsupported.** An assay reporting ">10 µM" cannot be
+  recorded faithfully, so that is the next gap in the data model.
+- [ ] Provenance class per value, and a review of the record by a discovery scientist.
+
+See [DECISION_RECORD.md](docs/DECISION_RECORD.md). `review` reports only measured picks:
+rejected candidates were never measured, so the record cannot claim a different batch
+would have been worse.
+
+### Milestone 9 — evidence-augmented selection tested; result is null (2026-10-16)
+
+- [x] Predeclare the study, hypotheses, metrics and promotion gate in
+  [configs/evidence-v1.json](configs/evidence-v1.json), frozen by hash before the run.
+- [x] Enforce strict replay in code: an external record is used only if its canonical
+  isomeric SMILES appears nowhere in the replay dataset, and the run aborts if a
+  permitted record matches a pool or audit compound.
+- [x] Run the first hypothesis on the dopamine transporter (`CHEMBL238_Ki`): baseline,
+  literature-augmented and an information-matched irrelevant-evidence control, over
+  2 protocols × 2 support sizes × 10 paired seeds = 120 replays.
+- [x] **Result: the gate fails.** Literature augmentation gained **+0.40** top-decile
+  compounds per 40 picks (standard error 0.33) against a required 1.0, and the
+  scrambled-value control reproduced +0.20 of that, against a required separation of
+  1.0. Secondary metrics did not support a benefit either (−0.45 hits above the 7.0 pKi
+  threshold; audit MAE improved by 0.004). **Evidence stays out of the ranking.**
+- [x] Record the supply limit found by the leakage filter: of 31 usable corpus
+  structures, 19 are already in the replay dataset and only 12 are permitted. A corpus
+  built from the same source as the replay data mostly re-supplies it.
+- [ ] Structural and combined arms are **not run**: docking covers one pocket of one
+  structure for verified demo compounds, so no pose or contact descriptor exists for the
+  replay pool. Learned retrieval stays deferred behind a demonstrated frozen-retrieval gain.
+- [ ] Three declared rules remain unmet and are limitations, not controls: no temporal
+  cutoff (the replay dataset has no measurement dates), no independent review (all 31
+  structures are machine-audited, zero human-reviewed), and one target with one endpoint.
+
+See [EVIDENCE_SELECTION.md](docs/EVIDENCE_SELECTION.md) for the design, the leakage
+handling and the full numbers. This is a null result on one target with twelve permitted
+compounds: it does not establish that literature evidence cannot help selection, only
+that this corpus at this size does not move this selector.
+
+The retest below supersedes that last sentence: with supply held at twelve structures
+the null is confirmed and tighter, and with supply swept the limit turns out to be the
+corpus, not the idea. See [EVIDENCE_RETEST.md](docs/EVIDENCE_RETEST.md).
+
+### Milestone 9 retest — supply and precision separated on nine targets (2026-10-16)
+
+- [x] Add paired power accounting as a reusable module,
+  [aster/evidence_power.py](aster/evidence_power.py): minimum detectable effect, achieved
+  power, cases required for a declared effect, and the largest effect a null rules out.
+  Any study's `case_metrics.csv` can be read with it.
+- [x] **Milestone 9 was adequately powered for its own gate**, with 84% power against
+  +1.0 and a minimum detectable effect of 0.95 over 40 cases. Its null ruled out gains
+  above +1.07 and said nothing below that: +0.5 would have needed 145 cases.
+- [x] Repeat milestone 9 unchanged with 40 seeds instead of 10
+  ([configs/evidence-v1-extended.json](configs/evidence-v1-extended.json)), 160 paired
+  cases. The literature arm fell to **+0.03** (CI −0.34 to +0.39). The original +0.40 was
+  split noise, and gains above +0.39 are now ruled out for that corpus.
+- [x] Predeclare and run the supply retest
+  ([configs/evidence-supply-v1.json](configs/evidence-supply-v1.json),
+  [aster/evidence_supply.py](aster/evidence_supply.py)): measurements are withheld from
+  the replay task and handed back as evidence, so supply is a controlled variable. 9
+  targets × 2 protocols × 2 donor regimes × 3 supply levels × 8 seeds = **864 paired
+  cases per arm**, minimum detectable effect 0.50.
+- [x] **Supply binds below about 50 structures.** At 12 supplied structures the gain is
+  +0.29 random / +0.23 scaffold-disjoint, both intervals spanning zero, matching the
+  literature arm. At 50 it is +2.35 / +1.15 and at 150 **+2.80 / +1.61**; the gate passes
+  in both regimes. The permuted control at 150 costs −8.54, so the gain is not an artifact
+  of extra training rows. Seven of nine targets gain.
+- [x] **Value precision binds at literature quality** (post-hoc sensitivity analysis,
+  [configs/evidence-supply-v1-noise.json](configs/evidence-supply-v1-noise.json), 576
+  paired cases). Perturbing donor values by same-laboratory spread (0.29 log units) keeps
+  about two thirds of the gain, +1.83 / +1.04 at 150. Perturbing by cross-source spread
+  (0.68 log units, what a literature corpus carries) removes it: **−0.99 / −1.88**, the
+  scaffold-disjoint figure significantly worse than adding nothing.
+- [x] **Decision: evidence stays out of the ranking, for a revised reason.** A larger
+  literature corpus would not have rescued milestone 9. Ranking-grade evidence means 50+
+  pool-external structures at single-laboratory precision on the campaign's endpoint,
+  which describes a collaborator's assay history rather than a public corpus. Corpus
+  expansion remains worthwhile for the decision record, where values are shown with their
+  provenance and never averaged into a prediction.
+- [x] **Decision: do not prepare a second docking pocket for selection yet.** The retest's
+  paired-difference standard deviation is 5.26, so a structural arm needs 219 cases to
+  detect +1.0 and 892 to detect +0.5. One new pocket on one structure yields one target,
+  16 cases, enough to detect only +3.94. A docking arm has to span several targets' pools
+  to be readable at all.
+- [ ] Still unmet: no temporal holdout (these datasets carry no measurement dates), one
+  benchmark collection, one endpoint family, no measured inactives. Donor measurements are
+  cleaner than any real corpus, so every figure above is an upper bound.
+
+See [EVIDENCE_RETEST.md](docs/EVIDENCE_RETEST.md) for the designs, the leakage rules, the
+per-target breakdown and the power accounting.
 
 ### Milestone 8 — local literature workflow implemented; independent review pending (2026-10-14)
 
@@ -284,7 +393,7 @@ expansion and milestone 9 remain planned. Milestone 8 has a local literature wor
 | 7A. First 3D evidence replay — implemented locally | Mol*; pinned RCSB 8Y2G; RDKit identity checking; verified geometric proximity; saved campaign replay. PLIP deferred | Verified ligand/target/atom mapping, source-labelled structure, contact selection and nearest-measured evidence; no invented binding pose |
 | 7B. Exploratory predicted poses — implemented locally; transfer validation pending | AutoDock Vina pilot with recorded preparation, pocket and seeds | Predeclared pose-validation checks pass; predicted poses remain labelled and docking scores do not replace potency |
 | 8. Literature evidence RAG — local workflow implemented; independent review pending | Europe PMC permitted content + ChEMBL records; typed claims, entity resolution, lexical/dense retrieval; SQLite FTS5/NumPy initially, Postgres/pgvector when warranted | Reviewed retrieval/extraction/citation test set, contradiction handling and abstention; literature does not silently change model scores |
-| 9. Evidence-augmented selection research | Compare baseline, reviewed literature augmentation, structural features, and combined evidence; optional MoleculeSTM-style retrieval/fusion later | Frozen corpus and model, no hidden-label access, matched information/budgets, and additional-target evaluation before promotion |
+| 9. Evidence-augmented selection research — first hypothesis run; result null | Baseline, literature augmentation and an information-matched irrelevant-evidence control on one target, with strict replay enforced in code; structural, combined and learned-retrieval arms not run | Gate failed: +0.40 top-decile gain against a required 1.0, and +0.20 of that reproduced by the scrambled control. Evidence remains attached to decisions and excluded from scores |
 
 - [x] Replace synthetic counts, compound IDs, rationale text and pIC50-only labels
   with campaign data. Use eight picks by default and show the declared endpoint.

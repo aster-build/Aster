@@ -6,11 +6,14 @@ performance result. No cloud service, GPU, or additional dependency is needed.
 
 ## Data contract
 
-A campaign contains **one coherent assay and one endpoint**, with higher values
-preferred. Specify `pKi` or `pIC50` explicitly. Supply already transformed values
-(`-log10` of a molar concentration); this interface does not guess units or convert
-raw nM/uM concentrations. Do not combine Ki and IC50, different assay conditions,
-or unrelated targets. The assay identifier records the user's declaration; the
+A campaign contains **one coherent assay and one endpoint**, declared at creation:
+the endpoint name (any name, such as `pKi`, `pIC50`, `percent_inhibition` or
+`clearance`), its unit if it has one, and whether `higher_is_better` or
+`lower_is_better`. Ranking, exports and the stored rounds follow that declaration.
+Supply values already on the scale you declared; this interface does not guess units
+or convert raw nM/uM concentrations, so a log-potency endpoint still means supplying
+`-log10` of a molar concentration. Do not combine Ki and IC50, different assay
+conditions, or unrelated targets. The assay identifier records the user's declaration; the
 software cannot establish experimental compatibility from a numeric CSV.
 
 Measured CSV: exactly `compound_id,smiles,value`, at least 32 distinct compounds.
@@ -40,7 +43,8 @@ Run commands from the repository with its existing environment:
 
 ```sh
 .venv/bin/python -m aster.campaign --db artifacts/my-campaign.sqlite create \
-  --name 'My campaign' --assay 'my-single-assay-id' --endpoint pKi \
+  --name 'My campaign' --assay 'my-single-assay-id' \
+  --endpoint pKi --unit 'log10 1/M' --direction higher_is_better \
   --measured measured.csv --candidates candidates.csv
 
 # Optional constraints, applied before proposing. IDs must exist in the candidate file.
@@ -92,16 +96,31 @@ campaign when those changes are needed.
 
 Each round fits standardized Morgan fingerprints (radius 2, 2,048 bits, chirality)
 with ridge alpha 10 on measured compounds only. It fills remaining batch slots by
-descending prediction, breaking exact ties by compound ID. The recipe is the
+prediction in the declared direction — descending when higher is better, ascending when
+lower is better — breaking exact ties by compound ID. The recipe is the
 provisional reference from the research milestones; no neural training occurs.
 
 The export includes prediction in the declared endpoint, selection reason,
 nearest measured compound and its observed value, and Morgan Tanimoto similarity.
-A prediction outside `[0,14]` is flagged as a diagnostic; it is not clipped or
-silently removed. This range is a review aid, not a universal validity boundary.
+A prediction outside the campaign's measured range, extended by one standard deviation
+of those measurements, is flagged as a diagnostic; it is not clipped or silently
+removed. Each round stores the exact range it used. This is a review aid, not a
+validity boundary or a confidence statement.
 Similarity is evidence of chemical proximity, **not calibrated confidence**. The
 workflow does not present bootstrap spread or residual bands as confidence scores.
 The nearest neighbour is drawn only from measurements available at decision time.
+
+## Reading a decision back
+
+After the results are in, every pick can be read as a decision joined to its basis and
+its outcome, including the full ranked slate it was chosen from:
+
+```sh
+.venv/bin/python -m aster.decisions --db artifacts/my-campaign.sqlite why candidate-001
+.venv/bin/python -m aster.decisions --db artifacts/my-campaign.sqlite review
+```
+
+See [the decision record](DECISION_RECORD.md).
 
 ## Persistence and recovery
 

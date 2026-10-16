@@ -1,0 +1,74 @@
+{
+  "version": "evidence-v1",
+  "question": "Does assay-compatible external evidence improve low-data batch selection on one target?",
+  "hypothesis": "Adding reviewed, assay-compatible historical measurements that are absent from the replay dataset improves top-decile pool recovery at a fixed acquisition budget, relative to the same model trained on campaign measurements alone.",
+  "task": "CHEMBL238_Ki",
+  "task_sha256": "305d33df171e112c1cd75855c12377b0096e4e3726b910339169b1ab982a2c05",
+  "target_accession": "Q01959",
+  "corpus": "data/literature/dat-v1/corpus.json",
+  "endpoint": "Ki",
+  "endpoint_scale": "pKi",
+  "protocols": ["published", "scaffold_transfer"],
+  "support_sizes": [32, 64],
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "rounds": 5,
+  "batch_size": 8,
+  "ridge_alpha": 10.0,
+  "scaling": "standard",
+  "radius": 2,
+  "bits": 2048,
+  "chirality": true,
+  "prediction_guard": [0.0, 14.0],
+  "hit_threshold_pki": 7.0,
+  "arms": [
+    {
+      "id": "baseline",
+      "evidence": "none",
+      "description": "Morgan + ridge on campaign measurements only; the implemented product default."
+    },
+    {
+      "id": "literature_strict",
+      "evidence": "permitted_external_measurements",
+      "description": "Same model and budget, with permitted external pKi measurements appended as additional training rows."
+    },
+    {
+      "id": "shuffled_control",
+      "evidence": "permitted_external_measurements_shuffled",
+      "description": "Information-matched irrelevant-evidence control: identical external structures and value distribution, with values permuted among those structures so the structure-value link is destroyed."
+    }
+  ],
+  "arms_not_run": [
+    {
+      "id": "structure_only",
+      "reason": "Docking exists for one pocket of one structure (8Y2G) and covers only verified demo compounds, so no pose or contact descriptor is available for the CHEMBL238 replay pool. No structural arm can be run without generating unvalidated poses for approximately 1000 compounds."
+    },
+    {
+      "id": "combined",
+      "reason": "Requires the structural arm."
+    },
+    {
+      "id": "learned_retrieval",
+      "reason": "Third roadmap hypothesis; the roadmap directs that it follow a demonstrated gain from frozen retrieval."
+    }
+  ],
+  "leakage_rules": {
+    "strict_replay": "An external record is permitted only if its canonical isomeric SMILES appears nowhere in the replay task dataset. Records matching any pool or audit compound are withheld, and the run aborts if any permitted record matches a pool or audit identity.",
+    "conflicts": "If one structure carries disagreeing values for the declared endpoint beyond 0.5 log units, the structure is excluded rather than pooled or averaged.",
+    "temporal": "Not applicable: the replay dataset carries no measurement dates, so a publication cutoff cannot separate earlier from later measurements. Recorded as a limitation, not satisfied.",
+    "pretraining": "Ridge regression is fitted from scratch per round, so no foundation-model pretraining overlap applies to this study."
+  },
+  "primary_metric": "Top-decile pool recovery after 5 rounds of 8 picks. The decile cutoff is the 90th percentile of pool values, computed by the evaluator after the replay has finished.",
+  "secondary_metrics": ["additional_hits", "audit_mae", "novel_scaffolds"],
+  "analysis": "Paired per-case differences against the baseline arm, with the same split, seed and budget. Report the mean paired difference, its standard error across cases, the per-protocol means, and the number of cases improved, unchanged and worsened. No significance claim is made from 40 correlated cases on one target.",
+  "promotion_gate": {
+    "mean_top_decile_gain_min": 1.0,
+    "control_separation_min": 1.0,
+    "meaning": "To recommend evidence augmentation as a default, the literature arm must gain at least 1.0 top-decile compounds per 40 picks over baseline AND beat the shuffled control by at least 1.0. A gain that the shuffled control reproduces is an artifact of extra training rows, not of evidence."
+  },
+  "declared_limitations": [
+    "One target, one endpoint, one corpus of 15 documents; this cannot establish that evidence augmentation generalizes.",
+    "The external corpus is machine-audited, not independently reviewed; milestone 8's review gate is still open.",
+    "Retrospective pools are compounds someone already chose to measure.",
+    "A null result is the expected outcome and does not establish that evidence is useless, only that this corpus at this size does not move this selector."
+  ]
+}
