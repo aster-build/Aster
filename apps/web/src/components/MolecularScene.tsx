@@ -12,9 +12,9 @@ import type { Contact, StructureEvidence } from '@/lib/replay';
 
 // Keep these renderer colors aligned with the scene tokens in globals.css.
 const scenePalette = {
-  background: Color(0xf5f3fa),
+  background: Color(0xfaf9f2),
   protein: Color(0x9cabc1),
-  reference: Color(0x7655d4),
+  reference: Color(0x4b8095),
   candidate: Color(0xd5a332),
   highlight: Color(0x6fd0d6),
   selection: Color(0xd69cd5),
