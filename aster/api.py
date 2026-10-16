@@ -45,7 +45,9 @@ class CreateInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     name: str = Field(min_length=1, max_length=120)
     assay: str = Field(min_length=1, max_length=250)
-    endpoint: str
+    endpoint: str = Field(min_length=1, max_length=100)
+    unit: str = Field(default='', max_length=60)
+    direction: Literal['higher_is_better', 'lower_is_better'] = 'higher_is_better'
     measured_csv: str = Field(max_length=2_000_000)
     candidates_csv: str = Field(max_length=2_000_000)
 
@@ -149,7 +151,9 @@ def create_app(storage=None):
             for path in (measured, candidates):
                 if sum(1 for _ in csv.DictReader(path.open())) > 2000:
                     raise ValueError('Prototype limit: 2,000 rows per input CSV')
-            campaign.create(store/(cid+'.sqlite'), measured, candidates, name=body.name, assay=body.assay, endpoint=body.endpoint)
+            campaign.create(store/(cid+'.sqlite'), measured, candidates, name=body.name,
+                            assay=body.assay, endpoint=body.endpoint, unit=body.unit,
+                            direction=body.direction)
         if demo:
             with campaign.transaction(store/(cid+'.sqlite'), True) as state:
                 state['demo'] = True
@@ -300,7 +304,7 @@ def create_app(storage=None):
     @app.post('/demo', status_code=201)
     def demo():
         fixture = ROOT/'examples/dashboard'
-        return create_record(CreateInput(name='Dopamine transporter · public replay', assay='MoleculeACE CHEMBL238 Ki task', endpoint='pKi',
+        return create_record(CreateInput(name='Dopamine transporter · public replay', assay='MoleculeACE CHEMBL238 Ki task', endpoint='pKi', unit='log10 1/M', direction='higher_is_better',
                                          measured_csv=(fixture/'measured.csv').read_text(), candidates_csv=(fixture/'candidates.csv').read_text()), demo=True)
 
     @app.get('/campaigns/{cid}')
@@ -308,9 +312,29 @@ def create_app(storage=None):
         state = campaign.load(database(cid))
         rounds = [{k: r[k] for k in ('round', 'status', 'created_at', 'recommendations', 'results', 'training_sha256')} |
                   {'training_count': len(r['training']), 'preview_id': r.get('preview_id')} for r in state['rounds']]
-        return {'id': cid, 'revision': fingerprint(state), 'name': state['name'], 'assay': state['assay'], 'endpoint': state['endpoint'],
+        return {'id': cid, 'revision': fingerprint(state), 'name': state['name'], 'assay': state['assay'],
+                **campaign.declaration(state),
                 'demo': state.get('demo', False), 'recipe': state['recipe'], 'rounds': rounds, 'events': state['events'],
                 'compounds': [{'compound_id': key, **value} for key, value in state['compounds'].items()]}
+
+    @app.get('/campaigns/{cid}/decisions')
+    def campaign_decisions(cid: str):
+        from .decisions import record
+        return record(campaign.load(database(cid)))
+
+    @app.get('/campaigns/{cid}/decisions/review')
+    def campaign_decision_review(cid: str):
+        from .decisions import review
+        return review(campaign.load(database(cid)))
+
+    @app.get('/campaigns/{cid}/decisions/{compound_id}')
+    def campaign_decision(cid: str, compound_id: str):
+        from .decisions import why
+        state = campaign.load(database(cid))
+        try:
+            return why(state, compound_id)
+        except ValueError as error:
+            raise HTTPException(404, str(error)) from None
 
     @app.get('/campaigns/{cid}/replay')
     def replay(cid: str):
