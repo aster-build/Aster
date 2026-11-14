@@ -180,3 +180,84 @@ Outputs: `output/expansionrx/source_report.json` (provenance, curation and
 censoring audit), `output/temporal/case_metrics.csv` (one row per case),
 `output/temporal/comparison.json` (per-endpoint and paired analysis with power).
 The run takes about two minutes on one core.
+
+## Secondary result: does ranking still beat picking at random?
+
+Prediction error is not what Aster is for. It exists to choose which compounds
+to assay next, and that is what its milestones report. So the second arm asks
+the product question directly: train on the earlier measurements, rank the later
+compounds, take the top 40, and count how many meet the endpoint's criterion,
+against taking 40 at random.
+
+The criteria are declared in `configs/temporal-v1.json` before the run. They are
+round numbers in common medicinal-chemistry use — solubility above 100 µM, liver
+clearance below 20 mL/min/kg, lipophilicity between 1 and 3, free fraction above
+5% — and they are **this study's choices, not published consensus**, so the whole
+arm is also run at a stricter (half) and a looser (double) setting.
+
+### Ranking survives, at under half the advantage a random split reports
+
+Extra compounds meeting the criterion per 40 assays, over random picking:
+
+| Endpoint | Pool hit rate | Temporal | What a random split reports | Lost to time |
+| --- | ---: | ---: | ---: | ---: |
+| Mouse muscle binding | 61% | +13.1 | +16.9 | 3.8 |
+| Kinetic solubility | 68% | +9.6 | +10.0 | 0.4 |
+| Mouse liver microsomal clearance | 6% | +8.3 | +18.2 | 9.8 |
+| Mouse brain protein binding | 47% | +6.1 | +19.5 | 13.4 |
+| Human liver microsomal clearance | 45% | +5.6 | +11.9 | 6.3 |
+| LogD | 69% | +3.9 | +12.1 | 8.2 |
+| Caco-2 efflux ratio | 29% | +3.8 | +11.4 | 7.6 |
+| Mouse plasma protein binding | 81% | +2.6 | +10.4 | 7.8 |
+| Caco-2 permeability | 22% | +0.6 | +9.1 | 8.5 |
+
+Ranking beat random picking on all nine endpoints, mean **+5.9 per 40 assays**
+(95% CI 3.0 to 8.9, paired t on 9 endpoints, p = 0.0016). The same comparison on
+a matched random split would have reported **+13.3**. The inflation is the firmer
+of the two findings: **+7.3 per 40** (95% CI 4.5 to 10.1, p = 0.0003).
+
+Sensitivity to the declared criteria, which matters because they are chosen:
+
+| Setting | Mean advantage | Endpoints where ranking won | Random-split figure |
+| --- | ---: | ---: | ---: |
+| Stricter (half) | +2.9 | 6 of 9, one negative | +8.6 |
+| **Declared** | **+5.9** | **9 of 9** | **+13.3** |
+| Looser (double) | +4.1 | 8 of 9 | +7.9 |
+
+The direction holds at all three. The magnitude plainly does not, so the
+supportable claim is "ranking still helps under time ordering", not the 5.9.
+
+### Two things worth separating
+
+**Ranking well and predicting well are not the same thing.** Mouse liver
+microsomal clearance has the *worst* prediction error of all nine (normalised MAE
+1.524, far past the no-model floor) and yet ranks usefully: 11 hits against 2.6
+for random picking, with none of 20 random seeds matching it. Only 6% of the
+later compounds meet that criterion, so it is a needle-in-a-haystack pool, and
+the model located needles while being unable to say how large any of them was.
+This dissociation argues that the discovery metric is the more faithful measure
+of what Aster does, and that the error result above, serious as it is, is not the
+whole verdict.
+
+**One endpoint's result is indistinguishable from chance.** Caco-2 permeability
+gained +0.6 compounds and 8 of the 20 random draws did as well or better. It is
+reported as a null, not averaged in quietly.
+
+### Additional limitations of this arm
+
+- One batch of 40 chosen in a single shot, not five sequential rounds of eight as
+  the milestones run. Sequential picking inside the later era would require
+  inventing an arrival order the release does not supply. This measures the first
+  decision, not a whole campaign.
+- A hit here means one endpoint clears one bar. Real programmes need several
+  endpoints to pass at once, which is strictly harder than anything measured here.
+- The later pool is the set of compounds chemists chose to make, already shaped by
+  their judgement. Beating random selection *inside* that pool is not evidence of
+  beating a medicinal chemist.
+- At the stricter setting the observed effect (+2.9) is smaller than that design's
+  own minimum detectable effect (3.4) despite p = 0.027, so that particular number
+  was found with less than the intended power and is the weakest in this document.
+
+Reproduce with `python -m aster.temporal_discovery` (about four minutes).
+Outputs: `output/temporal/discovery_case_metrics.csv`,
+`output/temporal/discovery_comparison.json`.

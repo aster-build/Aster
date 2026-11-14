@@ -54,20 +54,25 @@ reads the queue, it does not plan.
   is a version bump plus a build. Do this one first because it is small and it
   removes a warning that would otherwise appear on every future run.
 
-- [ ] **2. Read the OpenADMET ExpansionRx release with its measurement dates.**
+- [x] **2. Read the OpenADMET ExpansionRx release with its measurement dates.**
   Add a loader for the challenge data (reported as 7,000+ molecules over nine
   endpoints with a genuine time split), keeping the dates as data rather than
   discarding them. Record provenance and checksums the way `aster/data.py`
   already does for the Zenodo source.
 
-- [ ] **3. Add a temporal-split replay protocol.** Train only on measurements
+- [x] **3. Add a temporal-split replay protocol.** Train only on measurements
   taken before a cutoff date, evaluate on measurements taken after it. Aster has
   never had this, because none of its existing datasets carry dates. Keep the
   existing random-split protocol intact and comparable.
 
-- [ ] **4. Run the temporal holdout and write it up.** Report the same
+- [x] **4. Run the temporal holdout and write it up.** Report the same
   discovery metrics as the existing milestones so the numbers sit beside them,
   and state plainly how much the random-split figures were flattered.
+  Done. Results in `docs/TEMPORAL_RESULTS.md`: all nine endpoints are worse
+  under time ordering, six of nine fail to beat predicting the training mean,
+  and the random split reports about 35% less error. The discovery arm
+  (`aster/temporal_discovery.py`) shows ranking still beats random picking by
+  +5.9 compounds per 40 assays, against the +13.3 a random split would claim.
 
 - [ ] **5. Log each candidate's selection propensity at decision time.** For
   every candidate in a committed round's ranked slate, store the probability that

@@ -5,7 +5,17 @@
   "source": "openadmet/openadmet-expansionrx-challenge-data",
   "source_revision": "6b898ccc43d10d25b230fb09e22a6e30c30022b5",
   "time_basis": "Ordinal compound registration number, validated against the publishers' own earlier/later partition. Not a measurement date.",
-  "endpoints": ["logd", "ksol", "hlm_clint", "mlm_clint", "caco2_papp", "caco2_efflux", "mppb", "mbpb", "mgmb"],
+  "endpoints": [
+    "logd",
+    "ksol",
+    "hlm_clint",
+    "mlm_clint",
+    "caco2_papp",
+    "caco2_efflux",
+    "mppb",
+    "mbpb",
+    "mgmb"
+  ],
   "model": {
     "id": "morgan_ridge",
     "description": "The implemented product default: Morgan fingerprints into ridge regression, refitted from scratch per case.",
@@ -32,14 +42,47 @@
     {
       "id": "temporal_rolling",
       "description": "Nested earlier cutoffs inside the earlier era, each tested on the measurements that follow it, to show whether the temporal penalty is a property of the published cutoff or of time ordering generally.",
-      "quantiles": [0.5, 0.625, 0.75, 0.875]
+      "quantiles": [
+        0.5,
+        0.625,
+        0.75,
+        0.875
+      ]
     }
   ],
-  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
   "minimum_training_measurements": 60,
   "minimum_test_measurements": 30,
   "primary_metric": "Mean absolute error on the test measurements, in the endpoint's fitted units, divided by the standard deviation of that endpoint's own test values so the nine endpoints can be compared and averaged. One is the error of predicting the test mean.",
-  "secondary_metrics": ["mae", "rmse", "spearman", "training_mean_mae", "nearest_neighbour_distance", "new_scaffold_fraction"],
+  "secondary_metrics": [
+    "mae",
+    "rmse",
+    "spearman",
+    "training_mean_mae",
+    "nearest_neighbour_distance",
+    "new_scaffold_fraction"
+  ],
   "analysis": "Per endpoint, the temporal split gives one number and the random control gives a distribution over seeds; report the temporal value, the control mean and spread, and the gap. Across endpoints, treat the nine per-endpoint gaps as paired differences and run the repository's existing paired power accounting on them. Nine pairs is a small design and the power report states what it can and cannot detect.",
   "declared_limitations": [
     "The temporal split is a single realisation per endpoint, so its error has no seed-to-seed spread of its own; all quoted variability is the random control's.",
@@ -47,5 +90,82 @@
     "The nine endpoints come from one company's campaigns against one disease area, so a penalty measured here is not an estimate for drug discovery at large.",
     "Out-of-range measurements are absent from the released ML-ready files, so each endpoint's surviving values are a biased sample of what was measured.",
     "This measures prediction error, not whether a selection policy picks better compounds. A separate discovery-metric arm addresses that and shares these limitations."
-  ]
+  ],
+  "discovery": {
+    "description": "Secondary arm. Train on the earlier measurements, rank the later compounds, pick a batch, and count how many picks meet the endpoint's criterion. This is the metric Aster's milestones report, re-measured on a pool that is genuinely in the future.",
+    "batch_size": 40,
+    "batch_note": "One batch of 40, matching the 5 rounds of 8 the existing milestones budget, but chosen in a single shot rather than sequentially, so that no pick depends on the order of measurements inside the later era.",
+    "policies": [
+      "greedy",
+      "random"
+    ],
+    "criteria_source": "Round numbers in common medicinal-chemistry use, declared here before the run and NOT tuned. They are this study's choices, not published consensus thresholds, so the sensitivity entry re-runs the whole arm at a stricter and a looser setting.",
+    "criteria": {
+      "logd": {
+        "kind": "window",
+        "low": 1.0,
+        "high": 3.0,
+        "units": "log ratio",
+        "reason": "The lipophilicity window usually sought in lead optimisation: too low and the compound will not cross membranes, too high and it binds everything."
+      },
+      "ksol": {
+        "kind": "max",
+        "threshold": 100.0,
+        "units": "uM",
+        "reason": "Soluble enough to dose and to trust the other assays."
+      },
+      "hlm_clint": {
+        "kind": "min",
+        "threshold": 20.0,
+        "units": "mL/min/kg",
+        "reason": "Low human liver clearance, so the compound survives long enough to act."
+      },
+      "mlm_clint": {
+        "kind": "min",
+        "threshold": 20.0,
+        "units": "mL/min/kg",
+        "reason": "The same requirement in the mouse, the species these campaigns dosed."
+      },
+      "caco2_papp": {
+        "kind": "max",
+        "threshold": 10.0,
+        "units": "1e-6 cm/s",
+        "reason": "Permeable enough to be absorbed from the gut."
+      },
+      "caco2_efflux": {
+        "kind": "min",
+        "threshold": 2.0,
+        "units": "ratio",
+        "reason": "Not actively pumped back out by the gut lining."
+      },
+      "mppb": {
+        "kind": "max",
+        "threshold": 5.0,
+        "units": "% unbound",
+        "reason": "Enough free drug in plasma to reach the target."
+      },
+      "mbpb": {
+        "kind": "max",
+        "threshold": 5.0,
+        "units": "% unbound",
+        "reason": "Enough free drug in brain tissue, the compartment these programmes needed."
+      },
+      "mgmb": {
+        "kind": "max",
+        "threshold": 5.0,
+        "units": "% unbound",
+        "reason": "The same free fraction in muscle."
+      }
+    },
+    "sensitivity": {
+      "strict": 0.5,
+      "loose": 2.0,
+      "meaning": "Multiplies each one-sided threshold by this factor in the direction that makes it harder or easier, and widens or narrows the LogD window by 0.5 log units, so that the arm's conclusion can be checked against the thresholds being this study's own choice."
+    },
+    "declared_limitations": [
+      "The criteria are this study's declared choices. A different team would pick different numbers, which is why the arm is run at three settings.",
+      "A hit here means one endpoint meets one criterion. Real campaigns need several endpoints to pass at once, which is harder than any single column measured here.",
+      "The later pool is the compounds the chemists actually made, so it is already enriched for things they believed would work. Enrichment over random picking inside that pool is not enrichment over naive chemistry."
+    ]
+  }
 }
