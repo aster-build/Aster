@@ -34,7 +34,7 @@ reads the queue, it does not plan.
 
 ## Queue
 
-- [ ] **1. Upgrade Next.js off the version with the published advisory.**
+- [x] **1. Upgrade Next.js off the version with the published advisory.**
   `apps/web` pins Next.js 16.4.0, which carries a known security advisory;
   `next build` now compiles the app and then stops to say so before it will
   continue. The dashboard is local-only and unauthenticated, so the exposure is
