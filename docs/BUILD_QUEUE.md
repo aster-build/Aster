@@ -31,6 +31,18 @@ reads the queue, it does not plan.
   until it says yes.
 - Nothing that changes the meaning of an already-stored decision record without
   a migration and a note.
+- Build notes for Nicole, every run, including runs that stop early. A document
+  that teaches what was built rather than listing it: the short version; the
+  background needed to follow it, each term defined on first use; at least one
+  diagram or illustration of what was made (how the parts connect, the data
+  flow, a before and after, or the experiment's design); each decision with what
+  was chosen, why, and the alternative passed on; how it was checked, with the
+  real numbers, and a chart when there are five or more; findings, negative ones
+  included, and what is left; and how to merge it, step by step. A Claude Doc
+  when the run has the Claude Docs tools, otherwise a Markdown file with Mermaid
+  diagrams in the project's shared folder under `aster-build-notes/`. Link it
+  from the pull request. (Nicole asked for this on 2026-11-14 because she wants
+  to learn what was built, not just approve it.)
 
 ## Queue
 
@@ -42,28 +54,32 @@ reads the queue, it does not plan.
   is a version bump plus a build. Do this one first because it is small and it
   removes a warning that would otherwise appear on every future run.
 
-- [ ] **2. Log each candidate's selection propensity at decision time.** For
+- [ ] **2. Read the OpenADMET ExpansionRx release with its measurement dates.**
+  Add a loader for the challenge data (reported as 7,000+ molecules over nine
+  endpoints with a genuine time split), keeping the dates as data rather than
+  discarding them. Record provenance and checksums the way `aster/data.py`
+  already does for the Zenodo source.
+
+- [ ] **3. Add a temporal-split replay protocol.** Train only on measurements
+  taken before a cutoff date, evaluate on measurements taken after it. Aster has
+  never had this, because none of its existing datasets carry dates. Keep the
+  existing random-split protocol intact and comparable.
+
+- [ ] **4. Run the temporal holdout and write it up.** Report the same
+  discovery metrics as the existing milestones so the numbers sit beside them,
+  and state plainly how much the random-split figures were flattered.
+
+- [ ] **5. Log each candidate's selection propensity at decision time.** For
   every candidate in a committed round's ranked slate, store the probability that
   the policy in force would have selected it. One column, written at commit time.
   This cannot be reconstructed afterwards, which is why it is near the top:
   without it, no later analysis can ask what a different selection policy would
   have found, and every round committed meanwhile is a round that question is
   closed for.
-
-- [ ] **3. Read the OpenADMET ExpansionRx release with its measurement dates.**
-  Add a loader for the challenge data (reported as 7,000+ molecules over nine
-  endpoints with a genuine time split), keeping the dates as data rather than
-  discarding them. Record provenance and checksums the way `aster/data.py`
-  already does for the Zenodo source.
-
-- [ ] **4. Add a temporal-split replay protocol.** Train only on measurements
-  taken before a cutoff date, evaluate on measurements taken after it. Aster has
-  never had this, because none of its existing datasets carry dates. Keep the
-  existing random-split protocol intact and comparable.
-
-- [ ] **5. Run the temporal holdout and write it up.** Report the same
-  discovery metrics as the existing milestones so the numbers sit beside them,
-  and state plainly how much the random-split figures were flattered.
+  Nicole moved the temporal holdout (items 2 to 4) ahead of this on
+  2026-11-14. The cost of the delay is small for now: every campaign so far is
+  a retrospective replay that can be re-run, so no real decision is lost while
+  this waits. Keep it next once the holdout is in.
 
 - [ ] **6. Log a matched random shadow batch with every committed batch.** The
   same size, drawn from the same pool, recorded but never run. It costs nothing
