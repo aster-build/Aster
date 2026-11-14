@@ -1,0 +1,51 @@
+{
+  "version": "temporal-v1",
+  "question": "How much of Aster's measured accuracy survives being tested on compounds that came later, rather than on compounds drawn at random from the same pool?",
+  "hypothesis": "Error on a time-ordered holdout is worse than error on a random split of the same data at the same training and test sizes, because a random split lets the model train on compounds registered alongside the ones it is scored on.",
+  "source": "openadmet/openadmet-expansionrx-challenge-data",
+  "source_revision": "6b898ccc43d10d25b230fb09e22a6e30c30022b5",
+  "time_basis": "Ordinal compound registration number, validated against the publishers' own earlier/later partition. Not a measurement date.",
+  "endpoints": ["logd", "ksol", "hlm_clint", "mlm_clint", "caco2_papp", "caco2_efflux", "mppb", "mbpb", "mgmb"],
+  "model": {
+    "id": "morgan_ridge",
+    "description": "The implemented product default: Morgan fingerprints into ridge regression, refitted from scratch per case.",
+    "radius": 2,
+    "bits": 2048,
+    "chirality": true,
+    "ridge_alpha": 10.0,
+    "scaling": "standard"
+  },
+  "reference_arm": {
+    "id": "training_mean",
+    "description": "Predict the mean of the training values for every test compound. The no-model floor: any arm that does not beat it has learned nothing usable."
+  },
+  "splits": [
+    {
+      "id": "temporal",
+      "description": "Train on every eligible measurement at or below the published registration cutoff, test on every eligible measurement above it. One deterministic split per endpoint.",
+      "cutoff": 20100
+    },
+    {
+      "id": "random_matched",
+      "description": "Pool the same measurements, then draw a training set and a test set of exactly the sizes the temporal split produced, ignoring registration order. Repeated over seeds. This is the comparison that isolates time from sample size."
+    },
+    {
+      "id": "temporal_rolling",
+      "description": "Nested earlier cutoffs inside the earlier era, each tested on the measurements that follow it, to show whether the temporal penalty is a property of the published cutoff or of time ordering generally.",
+      "quantiles": [0.5, 0.625, 0.75, 0.875]
+    }
+  ],
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+  "minimum_training_measurements": 60,
+  "minimum_test_measurements": 30,
+  "primary_metric": "Mean absolute error on the test measurements, in the endpoint's fitted units, divided by the standard deviation of that endpoint's own test values so the nine endpoints can be compared and averaged. One is the error of predicting the test mean.",
+  "secondary_metrics": ["mae", "rmse", "spearman", "training_mean_mae", "nearest_neighbour_distance", "new_scaffold_fraction"],
+  "analysis": "Per endpoint, the temporal split gives one number and the random control gives a distribution over seeds; report the temporal value, the control mean and spread, and the gap. Across endpoints, treat the nine per-endpoint gaps as paired differences and run the repository's existing paired power accounting on them. Nine pairs is a small design and the power report states what it can and cannot detect.",
+  "declared_limitations": [
+    "The temporal split is a single realisation per endpoint, so its error has no seed-to-seed spread of its own; all quoted variability is the random control's.",
+    "Registration order is a proxy for time. It records when a compound entered the campaign, not when a measurement was taken.",
+    "The nine endpoints come from one company's campaigns against one disease area, so a penalty measured here is not an estimate for drug discovery at large.",
+    "Out-of-range measurements are absent from the released ML-ready files, so each endpoint's surviving values are a biased sample of what was measured.",
+    "This measures prediction error, not whether a selection policy picks better compounds. A separate discovery-metric arm addresses that and shares these limitations."
+  ]
+}
