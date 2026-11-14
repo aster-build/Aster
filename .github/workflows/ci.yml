@@ -1,0 +1,83 @@
+name: CI
+
+# Every branch and every pull request runs the two checks that were previously
+# only ever run by hand: the Python test suite, and the dashboard production
+# build. Nothing here deploys or publishes.
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Python test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.lock.txt
+
+      # The pinned set from requirements.lock.txt, plus the `web` extra, which
+      # supplies the FastAPI and httpx that tests/test_api.py imports. The
+      # heavier neural and docking environments are deliberately not installed:
+      # the tests that need them skip themselves when the package is absent.
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock.txt
+          python -m pip install -e '.[web]'
+
+      - name: Record the installed environment
+        run: python -m pip freeze
+
+      - name: Run the test suite
+        run: python -m pytest tests/ -q
+
+  web:
+    name: Dashboard build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+        working-directory: apps/web
+
+      # Next.js 16.4.0 has a published security advisory, and on a machine that
+      # has not seen the notice before, `next build` compiles the app and then
+      # aborts to show an upgrade recommendation, telling you to retry. Every CI
+      # runner is such a machine, so the first invocation always stops. The
+      # retry below is that documented retry and nothing more: it does not mask
+      # a compile failure, which fails both invocations. The advisory itself is
+      # a real finding and is item 1 of docs/BUILD_QUEUE.md; delete this comment
+      # and the retry once Next.js is upgraded.
+      - name: Build the dashboard
+        run: npm run build || npm run build
+        working-directory: apps/web
+
+      - name: Report the Next.js advisory
+        if: always()
+        run: npm audit --audit-level=high || true
+        working-directory: apps/web
