@@ -222,6 +222,12 @@ def analyse(metrics: pd.DataFrame, metric: str = "normalised_mae") -> dict:
             "random_matched_mae_mean": float(control.mae.mean()),
             "temporal_spearman": float(temporal.spearman.iloc[0]),
             "random_matched_spearman_mean": float(control.spearman.mean()),
+            # Carried so that a restricted range cannot masquerade as a worse model:
+            # a narrower set of held-out values depresses rank correlation on its own.
+            "temporal_test_value_sd": float(temporal.test_value_sd.iloc[0]),
+            "random_matched_test_value_sd_mean": float(control.test_value_sd.mean()),
+            "temporal_test_value_mean": float(temporal.test_value_mean.iloc[0]),
+            "random_matched_test_value_mean": float(control.test_value_mean.mean()),
             "temporal_beats_no_model": bool(temporal.mae.iloc[0] < temporal.training_mean_mae.iloc[0]),
             "temporal_training_mean_mae": float(temporal.training_mean_mae.iloc[0]),
             "temporal_nearest_neighbour_distance": float(temporal.nearest_neighbour_distance.iloc[0]),
