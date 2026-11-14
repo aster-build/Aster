@@ -1,0 +1,172 @@
+{
+  "provenance": {
+    "dataset": "openadmet/openadmet-expansionrx-challenge-data",
+    "revision": "6b898ccc43d10d25b230fb09e22a6e30c30022b5",
+    "dataset_url": "https://huggingface.co/datasets/openadmet/openadmet-expansionrx-challenge-data",
+    "license": "CC-BY-4.0",
+    "license_declared_by_publisher": "cc-by-4.0",
+    "last_modified": "2026-01-27T03:10:43.000Z",
+    "verified_at_utc": "2026-11-14T23:32:12.810009+00:00",
+    "files": {
+      "earlier": {
+        "name": "expansion_data_train.csv",
+        "sha256": "c5214ad8c8a4d7d4d09082fcce24fe16c97a980a1e0873b91b8c8e474b79f6e4"
+      },
+      "later": {
+        "name": "expansion_data_test.csv",
+        "sha256": "e21c0ef19795317216287e924e00ca3ef9388b7032a7fa4c7f27e2580372c85e"
+      },
+      "raw": {
+        "name": "expansion_data_raw.csv",
+        "sha256": "f674ec74cca1146bc386f832a32d4b8d921d3c312f92cb436cc005901c724a3c"
+      }
+    },
+    "metadata_sha256": "bd4d6d6725021f480b330c5c5ef1b42fed21605ce9aad3e4be7303562cc87ca5",
+    "attribution": "ADMET measurements released by Expansion Therapeutics through the OpenADMET-ExpansionRx blind challenge, which closed 19 January 2026."
+  },
+  "curation": {
+    "published_rows": {
+      "earlier": 5326,
+      "later": 2282
+    },
+    "eligible_compounds": 7608,
+    "compound_status_counts": {
+      "eligible": 7608
+    },
+    "eligible_measurements": 35646,
+    "measurement_status_counts": {
+      "eligible": 35646,
+      "non_positive_for_log": 357
+    },
+    "measurements_by_endpoint": {
+      "caco2_efflux": {
+        "earlier": 2161,
+        "later": 1616
+      },
+      "caco2_papp": {
+        "earlier": 2156,
+        "later": 1615
+      },
+      "hlm_clint": {
+        "earlier": 3595,
+        "later": 767
+      },
+      "ksol": {
+        "earlier": 5128,
+        "later": 2170
+      },
+      "logd": {
+        "earlier": 5039,
+        "later": 2270
+      },
+      "mbpb": {
+        "earlier": 973,
+        "later": 449
+      },
+      "mgmb": {
+        "earlier": 221,
+        "later": 204
+      },
+      "mlm_clint": {
+        "earlier": 4375,
+        "later": 1161
+      },
+      "mppb": {
+        "earlier": 1292,
+        "later": 454
+      }
+    },
+    "registration_range": {
+      "earlier": [
+        1321,
+        20100
+      ],
+      "later": [
+        20101,
+        27239
+      ]
+    },
+    "published_cutoff": 20100,
+    "rdkit_version": "2026.09.2",
+    "endpoints": [
+      {
+        "id": "logd",
+        "column": "LogD",
+        "units": "log ratio",
+        "transform": "identity"
+      },
+      {
+        "id": "ksol",
+        "column": "KSOL",
+        "units": "uM",
+        "transform": "log10"
+      },
+      {
+        "id": "hlm_clint",
+        "column": "HLM CLint",
+        "units": "mL/min/kg",
+        "transform": "log10"
+      },
+      {
+        "id": "mlm_clint",
+        "column": "MLM CLint",
+        "units": "mL/min/kg",
+        "transform": "log10"
+      },
+      {
+        "id": "caco2_papp",
+        "column": "Caco-2 Permeability Papp A>B",
+        "units": "1e-6 cm/s",
+        "transform": "log10"
+      },
+      {
+        "id": "caco2_efflux",
+        "column": "Caco-2 Permeability Efflux",
+        "units": "ratio",
+        "transform": "log10"
+      },
+      {
+        "id": "mppb",
+        "column": "MPPB",
+        "units": "% unbound",
+        "transform": "log10"
+      },
+      {
+        "id": "mbpb",
+        "column": "MBPB",
+        "units": "% unbound",
+        "transform": "log10"
+      },
+      {
+        "id": "mgmb",
+        "column": "MGMB",
+        "units": "% unbound",
+        "transform": "log10"
+      }
+    ],
+    "policy": "One row per measurement; parse and canonicalise SMILES preserving stereochemistry and charge; reject mixtures; exclude duplicate structures wholesale; exclude non-positive values on log-scaled endpoints as below assay range; no salt stripping, tautomer merging or value imputation.",
+    "time_basis": "Ordinal registration number parsed from the compound identifier, validated to agree with the publishers' own earlier/later partition. Not a measurement date.",
+    "declared_limitations": [
+      "The release carries no measurement dates, so no real cutoff date can be stated.",
+      "Registration order records when a compound entered the campaign, not when it was assayed, so a late-registered compound may carry an early measurement.",
+      "The ML-ready files drop out-of-range measurements, so the surviving values are a biased sample of what was measured: compounds too insoluble or too unstable to quantify are absent from the endpoint that failed."
+    ]
+  },
+  "censoring": {
+    "raw_rows": 7618,
+    "modified_measurements_by_endpoint": {
+      "logd": 22,
+      "ksol": 125,
+      "hlm_clint": 280,
+      "mlm_clint": 112,
+      "caco2_papp": 33,
+      "caco2_efflux": 26,
+      "mppb": 14,
+      "mbpb": 4,
+      "mgmb": 1
+    },
+    "modified_measurements": 617,
+    "compounds_with_any_modifier": 527,
+    "meaning": "A modifier marks a measurement that fell outside the assay's quantifiable range, so its true value is bounded, not unknown. The ML-ready files drop these rows; storing them faithfully is separate queue work and no model here is fitted on them."
+  }
+}
