@@ -136,6 +136,9 @@ def test_manual_selection_is_committed_exactly_and_replayed(client):
     record = state['rounds'][0]
     assert [r['compound_id'] for r in record['recommendations']] == selected
     assert all(r['selection_reason'] == 'user_selected' for r in record['recommendations'])
+    stored = client.get(f'/campaigns/{cid}/decisions/review').json()['rounds'][0]['off_policy']
+    assert stored['propensity_logged'] and stored['batch_followed_policy'] is False
+    assert stored['usable_for_off_policy_evaluation'] is False
     assert {c['compound_id'] for c in state['compounds'] if c['status'] == 'pending'} == set(selected)
     assert client.post(f'/campaigns/{cid}/commit', json=body).json()['already_committed']
     assert client.post(f'/campaigns/{cid}/commit', json={**body, 'selected_ids':selected[::-1]}).status_code == 409
