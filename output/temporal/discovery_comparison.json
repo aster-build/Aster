@@ -1,0 +1,790 @@
+{
+  "config": {
+    "description": "Secondary arm. Train on the earlier measurements, rank the later compounds, pick a batch, and count how many picks meet the endpoint's criterion. This is the metric Aster's milestones report, re-measured on a pool that is genuinely in the future.",
+    "batch_size": 40,
+    "batch_note": "One batch of 40, matching the 5 rounds of 8 the existing milestones budget, but chosen in a single shot rather than sequentially, so that no pick depends on the order of measurements inside the later era.",
+    "policies": [
+      "greedy",
+      "random"
+    ],
+    "criteria_source": "Round numbers in common medicinal-chemistry use, declared here before the run and NOT tuned. They are this study's choices, not published consensus thresholds, so the sensitivity entry re-runs the whole arm at a stricter and a looser setting.",
+    "criteria": {
+      "logd": {
+        "kind": "window",
+        "low": 1.0,
+        "high": 3.0,
+        "units": "log ratio",
+        "reason": "The lipophilicity window usually sought in lead optimisation: too low and the compound will not cross membranes, too high and it binds everything."
+      },
+      "ksol": {
+        "kind": "max",
+        "threshold": 100.0,
+        "units": "uM",
+        "reason": "Soluble enough to dose and to trust the other assays."
+      },
+      "hlm_clint": {
+        "kind": "min",
+        "threshold": 20.0,
+        "units": "mL/min/kg",
+        "reason": "Low human liver clearance, so the compound survives long enough to act."
+      },
+      "mlm_clint": {
+        "kind": "min",
+        "threshold": 20.0,
+        "units": "mL/min/kg",
+        "reason": "The same requirement in the mouse, the species these campaigns dosed."
+      },
+      "caco2_papp": {
+        "kind": "max",
+        "threshold": 10.0,
+        "units": "1e-6 cm/s",
+        "reason": "Permeable enough to be absorbed from the gut."
+      },
+      "caco2_efflux": {
+        "kind": "min",
+        "threshold": 2.0,
+        "units": "ratio",
+        "reason": "Not actively pumped back out by the gut lining."
+      },
+      "mppb": {
+        "kind": "max",
+        "threshold": 5.0,
+        "units": "% unbound",
+        "reason": "Enough free drug in plasma to reach the target."
+      },
+      "mbpb": {
+        "kind": "max",
+        "threshold": 5.0,
+        "units": "% unbound",
+        "reason": "Enough free drug in brain tissue, the compartment these programmes needed."
+      },
+      "mgmb": {
+        "kind": "max",
+        "threshold": 5.0,
+        "units": "% unbound",
+        "reason": "The same free fraction in muscle."
+      }
+    },
+    "sensitivity": {
+      "strict": 0.5,
+      "loose": 2.0,
+      "meaning": "Multiplies each one-sided threshold by this factor in the direction that makes it harder or easier, and widens or narrows the LogD window by 0.5 log units, so that the arm's conclusion can be checked against the thresholds being this study's own choice."
+    },
+    "declared_limitations": [
+      "The criteria are this study's declared choices. A different team would pick different numbers, which is why the arm is run at three settings.",
+      "A hit here means one endpoint meets one criterion. Real campaigns need several endpoints to pass at once, which is harder than any single column measured here.",
+      "The later pool is the compounds the chemists actually made, so it is already enriched for things they believed would work. Enrichment over random picking inside that pool is not enrichment over naive chemistry."
+    ]
+  },
+  "analysis": {
+    "by_strictness": {
+      "declared": {
+        "per_endpoint": {
+          "caco2_efflux": {
+            "endpoint_label": "Caco-2 efflux ratio",
+            "criterion": {
+              "kind": "min",
+              "threshold": 0.3010299956639812
+            },
+            "pool_hit_rate": 0.2939356435643564,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 16,
+            "temporal_random_hits_mean": 12.2,
+            "temporal_random_hits_sd": 3.8333714719689334,
+            "temporal_advantage": 3.8000000000000007,
+            "temporal_random_seeds_matching_greedy": 4,
+            "random_split_greedy_hits_mean": 30.85,
+            "random_split_random_hits_mean": 19.45,
+            "random_split_advantage": 11.400000000000002,
+            "advantage_lost_to_time": 7.600000000000001
+          },
+          "caco2_papp": {
+            "endpoint_label": "Caco-2 permeability",
+            "criterion": {
+              "kind": "max",
+              "threshold": 1.0
+            },
+            "pool_hit_rate": 0.21795665634674924,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 10,
+            "temporal_random_hits_mean": 9.4,
+            "temporal_random_hits_sd": 2.392972166464475,
+            "temporal_advantage": 0.5999999999999996,
+            "temporal_random_seeds_matching_greedy": 8,
+            "random_split_greedy_hits_mean": 24.4,
+            "random_split_random_hits_mean": 15.3,
+            "random_split_advantage": 9.099999999999998,
+            "advantage_lost_to_time": 8.499999999999998
+          },
+          "hlm_clint": {
+            "endpoint_label": "Human liver microsomal clearance",
+            "criterion": {
+              "kind": "min",
+              "threshold": 1.3010299956639813
+            },
+            "pool_hit_rate": 0.4498044328552803,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 23,
+            "temporal_random_hits_mean": 17.45,
+            "temporal_random_hits_sd": 2.8557421378504637,
+            "temporal_advantage": 5.550000000000001,
+            "temporal_random_seeds_matching_greedy": 1,
+            "random_split_greedy_hits_mean": 33.1,
+            "random_split_random_hits_mean": 21.25,
+            "random_split_advantage": 11.850000000000001,
+            "advantage_lost_to_time": 6.300000000000001
+          },
+          "ksol": {
+            "endpoint_label": "Kinetic solubility",
+            "criterion": {
+              "kind": "max",
+              "threshold": 2.0
+            },
+            "pool_hit_rate": 0.6764976958525346,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 36,
+            "temporal_random_hits_mean": 26.45,
+            "temporal_random_hits_sd": 2.6650762801367183,
+            "temporal_advantage": 9.55,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 33.05,
+            "random_split_random_hits_mean": 23.05,
+            "random_split_advantage": 9.999999999999996,
+            "advantage_lost_to_time": 0.44999999999999574
+          },
+          "logd": {
+            "endpoint_label": "LogD",
+            "criterion": {
+              "high": 3.0,
+              "kind": "window",
+              "low": 1.0
+            },
+            "pool_hit_rate": 0.6920704845814978,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 32,
+            "temporal_random_hits_mean": 28.05,
+            "temporal_random_hits_sd": 2.282081229238369,
+            "temporal_advantage": 3.9499999999999993,
+            "temporal_random_seeds_matching_greedy": 1,
+            "random_split_greedy_hits_mean": 37.7,
+            "random_split_random_hits_mean": 25.6,
+            "random_split_advantage": 12.100000000000001,
+            "advantage_lost_to_time": 8.150000000000002
+          },
+          "mbpb": {
+            "endpoint_label": "Mouse brain protein binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.6989700043360189
+            },
+            "pool_hit_rate": 0.47438752783964366,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 25,
+            "temporal_random_hits_mean": 18.95,
+            "temporal_random_hits_sd": 3.2195946132524527,
+            "temporal_advantage": 6.050000000000001,
+            "temporal_random_seeds_matching_greedy": 2,
+            "random_split_greedy_hits_mean": 36.4,
+            "random_split_random_hits_mean": 16.9,
+            "random_split_advantage": 19.5,
+            "advantage_lost_to_time": 13.45
+          },
+          "mgmb": {
+            "endpoint_label": "Mouse muscle binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.6989700043360189
+            },
+            "pool_hit_rate": 0.6078431372549019,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 39,
+            "temporal_random_hits_mean": 25.95,
+            "temporal_random_hits_sd": 2.8923674513595623,
+            "temporal_advantage": 13.05,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 37.25,
+            "random_split_random_hits_mean": 20.4,
+            "random_split_advantage": 16.85,
+            "advantage_lost_to_time": 3.8000000000000007
+          },
+          "mlm_clint": {
+            "endpoint_label": "Mouse liver microsomal clearance",
+            "criterion": {
+              "kind": "min",
+              "threshold": 1.3010299956639813
+            },
+            "pool_hit_rate": 0.05598621877691645,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 11,
+            "temporal_random_hits_mean": 2.65,
+            "temporal_random_hits_sd": 1.6311119875071343,
+            "temporal_advantage": 8.35,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 21.75,
+            "random_split_random_hits_mean": 3.55,
+            "random_split_advantage": 18.2,
+            "advantage_lost_to_time": 9.85
+          },
+          "mppb": {
+            "endpoint_label": "Mouse plasma protein binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.6989700043360189
+            },
+            "pool_hit_rate": 0.8061674008810573,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 34,
+            "temporal_random_hits_mean": 31.35,
+            "temporal_random_hits_sd": 2.758241239783443,
+            "temporal_advantage": 2.6499999999999986,
+            "temporal_random_seeds_matching_greedy": 4,
+            "random_split_greedy_hits_mean": 37.85,
+            "random_split_random_hits_mean": 27.45,
+            "random_split_advantage": 10.400000000000002,
+            "advantage_lost_to_time": 7.7500000000000036
+          }
+        },
+        "across_endpoints": {
+          "endpoints": 9,
+          "mean_temporal_advantage": 5.949999999999999,
+          "mean_random_split_advantage": 13.266666666666667,
+          "endpoints_where_ranking_beat_random_under_time": 9,
+          "endpoints_where_ranking_lost_to_random_under_time": 0,
+          "units": "extra compounds meeting the criterion per 40 assays"
+        }
+      },
+      "loose": {
+        "per_endpoint": {
+          "caco2_efflux": {
+            "endpoint_label": "Caco-2 efflux ratio",
+            "criterion": {
+              "kind": "min",
+              "threshold": 0.6020599913279624
+            },
+            "pool_hit_rate": 0.45544554455445546,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 21,
+            "temporal_random_hits_mean": 18.85,
+            "temporal_random_hits_sd": 3.9373381336821156,
+            "temporal_advantage": 2.1499999999999986,
+            "temporal_random_seeds_matching_greedy": 7,
+            "random_split_greedy_hits_mean": 34.2,
+            "random_split_random_hits_mean": 25.45,
+            "random_split_advantage": 8.750000000000004,
+            "advantage_lost_to_time": 6.600000000000005
+          },
+          "caco2_papp": {
+            "endpoint_label": "Caco-2 permeability",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.5
+            },
+            "pool_hit_rate": 0.5015479876160991,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 21,
+            "temporal_random_hits_mean": 20.6,
+            "temporal_random_hits_sd": 3.050452943071691,
+            "temporal_advantage": 0.3999999999999986,
+            "temporal_random_seeds_matching_greedy": 8,
+            "random_split_greedy_hits_mean": 34.15,
+            "random_split_random_hits_mean": 26.4,
+            "random_split_advantage": 7.75,
+            "advantage_lost_to_time": 7.350000000000001
+          },
+          "hlm_clint": {
+            "endpoint_label": "Human liver microsomal clearance",
+            "criterion": {
+              "kind": "min",
+              "threshold": 2.6020599913279625
+            },
+            "pool_hit_rate": 1.0,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 40,
+            "temporal_random_hits_mean": 40.0,
+            "temporal_random_hits_sd": 0.0,
+            "temporal_advantage": 0.0,
+            "temporal_random_seeds_matching_greedy": 20,
+            "random_split_greedy_hits_mean": 39.8,
+            "random_split_random_hits_mean": 39.35,
+            "random_split_advantage": 0.44999999999999574,
+            "advantage_lost_to_time": 0.44999999999999574
+          },
+          "ksol": {
+            "endpoint_label": "Kinetic solubility",
+            "criterion": {
+              "kind": "max",
+              "threshold": 1.0
+            },
+            "pool_hit_rate": 0.867741935483871,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 39,
+            "temporal_random_hits_mean": 34.5,
+            "temporal_random_hits_sd": 2.2826577307580465,
+            "temporal_advantage": 4.5,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 38.75,
+            "random_split_random_hits_mean": 32.8,
+            "random_split_advantage": 5.950000000000003,
+            "advantage_lost_to_time": 1.4500000000000028
+          },
+          "logd": {
+            "endpoint_label": "LogD",
+            "criterion": {
+              "high": 3.5,
+              "kind": "window",
+              "low": 0.5
+            },
+            "pool_hit_rate": 0.8599118942731278,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 37,
+            "temporal_random_hits_mean": 34.7,
+            "temporal_random_hits_sd": 1.5593520921743174,
+            "temporal_advantage": 2.299999999999997,
+            "temporal_random_seeds_matching_greedy": 3,
+            "random_split_greedy_hits_mean": 39.3,
+            "random_split_random_hits_mean": 32.35,
+            "random_split_advantage": 6.949999999999996,
+            "advantage_lost_to_time": 4.649999999999999
+          },
+          "mbpb": {
+            "endpoint_label": "Mouse brain protein binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.34948500216800943
+            },
+            "pool_hit_rate": 0.6592427616926503,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 37,
+            "temporal_random_hits_mean": 26.7,
+            "temporal_random_hits_sd": 2.430074722697789,
+            "temporal_advantage": 10.3,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 38.85,
+            "random_split_random_hits_mean": 25.1,
+            "random_split_advantage": 13.75,
+            "advantage_lost_to_time": 3.4499999999999993
+          },
+          "mgmb": {
+            "endpoint_label": "Mouse muscle binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.34948500216800943
+            },
+            "pool_hit_rate": 0.7205882352941176,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 40,
+            "temporal_random_hits_mean": 29.6,
+            "temporal_random_hits_sd": 2.6036411750510196,
+            "temporal_advantage": 10.399999999999999,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 39.65,
+            "random_split_random_hits_mean": 28.35,
+            "random_split_advantage": 11.299999999999997,
+            "advantage_lost_to_time": 0.8999999999999986
+          },
+          "mlm_clint": {
+            "endpoint_label": "Mouse liver microsomal clearance",
+            "criterion": {
+              "kind": "min",
+              "threshold": 2.6020599913279625
+            },
+            "pool_hit_rate": 0.7984496124031008,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 38,
+            "temporal_random_hits_mean": 32.1,
+            "temporal_random_hits_sd": 2.693071031173773,
+            "temporal_advantage": 5.899999999999999,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 36.75,
+            "random_split_random_hits_mean": 26.25,
+            "random_split_advantage": 10.5,
+            "advantage_lost_to_time": 4.600000000000001
+          },
+          "mppb": {
+            "endpoint_label": "Mouse plasma protein binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 0.34948500216800943
+            },
+            "pool_hit_rate": 0.9030837004405287,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 37,
+            "temporal_random_hits_mean": 35.95,
+            "temporal_random_hits_sd": 2.0124611797498106,
+            "temporal_advantage": 1.0499999999999972,
+            "temporal_random_seeds_matching_greedy": 11,
+            "random_split_greedy_hits_mean": 39.45,
+            "random_split_random_hits_mean": 33.45,
+            "random_split_advantage": 6.0,
+            "advantage_lost_to_time": 4.950000000000003
+          }
+        },
+        "across_endpoints": {
+          "endpoints": 9,
+          "mean_temporal_advantage": 4.11111111111111,
+          "mean_random_split_advantage": 7.933333333333333,
+          "endpoints_where_ranking_beat_random_under_time": 8,
+          "endpoints_where_ranking_lost_to_random_under_time": 0,
+          "units": "extra compounds meeting the criterion per 40 assays"
+        }
+      },
+      "strict": {
+        "per_endpoint": {
+          "caco2_efflux": {
+            "endpoint_label": "Caco-2 efflux ratio",
+            "criterion": {
+              "kind": "min",
+              "threshold": 0.1505149978319906
+            },
+            "pool_hit_rate": 0.18626237623762376,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 13,
+            "temporal_random_hits_mean": 6.95,
+            "temporal_random_hits_sd": 2.4809802816416613,
+            "temporal_advantage": 6.05,
+            "temporal_random_seeds_matching_greedy": 1,
+            "random_split_greedy_hits_mean": 25.9,
+            "random_split_random_hits_mean": 15.3,
+            "random_split_advantage": 10.599999999999998,
+            "advantage_lost_to_time": 4.549999999999998
+          },
+          "caco2_papp": {
+            "endpoint_label": "Caco-2 permeability",
+            "criterion": {
+              "kind": "max",
+              "threshold": 2.0
+            },
+            "pool_hit_rate": 0.0,
+            "best_possible_hits": 0,
+            "temporal_greedy_hits": 0,
+            "temporal_random_hits_mean": 0.0,
+            "temporal_random_hits_sd": 0.0,
+            "temporal_advantage": 0.0,
+            "temporal_random_seeds_matching_greedy": 20,
+            "random_split_greedy_hits_mean": 0.0,
+            "random_split_random_hits_mean": 0.0,
+            "random_split_advantage": 0.0,
+            "advantage_lost_to_time": 0.0
+          },
+          "hlm_clint": {
+            "endpoint_label": "Human liver microsomal clearance",
+            "criterion": {
+              "kind": "min",
+              "threshold": 0.6505149978319906
+            },
+            "pool_hit_rate": 0.03259452411994785,
+            "best_possible_hits": 25,
+            "temporal_greedy_hits": 1,
+            "temporal_random_hits_mean": 1.35,
+            "temporal_random_hits_sd": 1.0399898784932577,
+            "temporal_advantage": -0.3500000000000001,
+            "temporal_random_seeds_matching_greedy": 15,
+            "random_split_greedy_hits_mean": 16.65,
+            "random_split_random_hits_mean": 5.75,
+            "random_split_advantage": 10.899999999999999,
+            "advantage_lost_to_time": 11.249999999999998
+          },
+          "ksol": {
+            "endpoint_label": "Kinetic solubility",
+            "criterion": {
+              "kind": "max",
+              "threshold": 4.0
+            },
+            "pool_hit_rate": 0.0,
+            "best_possible_hits": 0,
+            "temporal_greedy_hits": 0,
+            "temporal_random_hits_mean": 0.0,
+            "temporal_random_hits_sd": 0.0,
+            "temporal_advantage": 0.0,
+            "temporal_random_seeds_matching_greedy": 20,
+            "random_split_greedy_hits_mean": 0.0,
+            "random_split_random_hits_mean": 0.0,
+            "random_split_advantage": 0.0,
+            "advantage_lost_to_time": 0.0
+          },
+          "logd": {
+            "endpoint_label": "LogD",
+            "criterion": {
+              "high": 2.5,
+              "kind": "window",
+              "low": 1.5
+            },
+            "pool_hit_rate": 0.4290748898678414,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 24,
+            "temporal_random_hits_mean": 17.0,
+            "temporal_random_hits_sd": 2.5955427380922007,
+            "temporal_advantage": 7.0,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 31.5,
+            "random_split_random_hits_mean": 15.25,
+            "random_split_advantage": 16.25,
+            "advantage_lost_to_time": 9.25
+          },
+          "mbpb": {
+            "endpoint_label": "Mouse brain protein binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 1.3979400086720377
+            },
+            "pool_hit_rate": 0.0200445434298441,
+            "best_possible_hits": 9,
+            "temporal_greedy_hits": 1,
+            "temporal_random_hits_mean": 0.55,
+            "temporal_random_hits_sd": 0.6048053188292994,
+            "temporal_advantage": 0.44999999999999996,
+            "temporal_random_seeds_matching_greedy": 10,
+            "random_split_greedy_hits_mean": 13.0,
+            "random_split_random_hits_mean": 2.35,
+            "random_split_advantage": 10.65,
+            "advantage_lost_to_time": 10.200000000000001
+          },
+          "mgmb": {
+            "endpoint_label": "Mouse muscle binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 1.3979400086720377
+            },
+            "pool_hit_rate": 0.058823529411764705,
+            "best_possible_hits": 12,
+            "temporal_greedy_hits": 6,
+            "temporal_random_hits_mean": 2.2,
+            "temporal_random_hits_sd": 1.105012502906165,
+            "temporal_advantage": 3.8,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 6.8,
+            "random_split_random_hits_mean": 2.4,
+            "random_split_advantage": 4.4,
+            "advantage_lost_to_time": 0.6000000000000005
+          },
+          "mlm_clint": {
+            "endpoint_label": "Mouse liver microsomal clearance",
+            "criterion": {
+              "kind": "min",
+              "threshold": 0.6505149978319906
+            },
+            "pool_hit_rate": 0.00516795865633075,
+            "best_possible_hits": 6,
+            "temporal_greedy_hits": 2,
+            "temporal_random_hits_mean": 0.3,
+            "temporal_random_hits_sd": 0.4701623459816272,
+            "temporal_advantage": 1.7,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 5.35,
+            "random_split_random_hits_mean": 0.8,
+            "random_split_advantage": 4.55,
+            "advantage_lost_to_time": 2.8499999999999996
+          },
+          "mppb": {
+            "endpoint_label": "Mouse plasma protein binding",
+            "criterion": {
+              "kind": "max",
+              "threshold": 1.3979400086720377
+            },
+            "pool_hit_rate": 0.28193832599118945,
+            "best_possible_hits": 40,
+            "temporal_greedy_hits": 18,
+            "temporal_random_hits_mean": 10.85,
+            "temporal_random_hits_sd": 2.1343062474478063,
+            "temporal_advantage": 7.15,
+            "temporal_random_seeds_matching_greedy": 0,
+            "random_split_greedy_hits_mean": 27.9,
+            "random_split_random_hits_mean": 7.45,
+            "random_split_advantage": 20.45,
+            "advantage_lost_to_time": 13.299999999999999
+          }
+        },
+        "across_endpoints": {
+          "endpoints": 9,
+          "mean_temporal_advantage": 2.8666666666666663,
+          "mean_random_split_advantage": 8.644444444444444,
+          "endpoints_where_ranking_beat_random_under_time": 6,
+          "endpoints_where_ranking_lost_to_random_under_time": 1,
+          "units": "extra compounds meeting the criterion per 40 assays"
+        }
+      }
+    },
+    "power": {
+      "declared": {
+        "advantage_survives": {
+          "cases": 9,
+          "mean_paired_difference": 5.949999999999999,
+          "standard_deviation": 3.8313672494293733,
+          "standard_error": 1.2771224164764579,
+          "confidence_level": 0.95,
+          "confidence_interval": [
+            3.0049504264433504,
+            8.895049573556648
+          ],
+          "largest_effect_not_ruled_out": 8.895049573556648,
+          "minimum_detectable_effect": 4.087966236631992,
+          "target_power": 0.8,
+          "power_against_declared_effects": {
+            "2": 0.28183112112632897,
+            "1": 0.10656645584364276,
+            "0.5": 0.06389394501749204
+          },
+          "cases_required_for_effects": {
+            "2": 31,
+            "1": 118,
+            "0.5": 468
+          },
+          "paired_t": {
+            "statistic": 4.658911254894319,
+            "p_value": 0.0016257464163332766,
+            "test": "two-sided one-sample t on paired differences"
+          }
+        },
+        "advantage_lost_to_time": {
+          "cases": 9,
+          "mean_paired_difference": 7.316666666666666,
+          "standard_deviation": 3.656330127327127,
+          "standard_error": 1.2187767091090425,
+          "confidence_level": 0.95,
+          "confidence_interval": [
+            4.50616253557069,
+            10.127170797762643
+          ],
+          "largest_effect_not_ruled_out": 10.127170797762643,
+          "minimum_detectable_effect": 3.9012063155051973,
+          "target_power": 0.8,
+          "power_against_declared_effects": {
+            "2": 0.30429564666432796,
+            "1": 0.11223009199581563,
+            "0.5": 0.06526628989746913
+          },
+          "cases_required_for_effects": {
+            "2": 29,
+            "1": 112,
+            "0.5": 423
+          },
+          "paired_t": {
+            "statistic": 6.00328724038002,
+            "p_value": 0.0003222109243643614,
+            "test": "two-sided one-sample t on paired differences"
+          }
+        }
+      },
+      "loose": {
+        "advantage_survives": {
+          "cases": 9,
+          "mean_paired_difference": 4.11111111111111,
+          "standard_deviation": 4.005837753967467,
+          "standard_error": 1.335279251322489,
+          "confidence_level": 0.95,
+          "confidence_interval": [
+            1.0319516359091279,
+            7.190270586313092
+          ],
+          "largest_effect_not_ruled_out": 7.190270586313092,
+          "minimum_detectable_effect": 4.274121591993998,
+          "target_power": 0.8,
+          "power_against_declared_effects": {
+            "2": 0.2621259364382546,
+            "1": 0.10165722213042222,
+            "0.5": 0.06270255292710913
+          },
+          "cases_required_for_effects": {
+            "2": 34,
+            "1": 131,
+            "0.5": 517
+          },
+          "paired_t": {
+            "statistic": 3.078839955791553,
+            "p_value": 0.015143523832754722,
+            "test": "two-sided one-sample t on paired differences"
+          }
+        },
+        "advantage_lost_to_time": {
+          "cases": 9,
+          "mean_paired_difference": 3.822222222222223,
+          "standard_deviation": 2.459688891800029,
+          "standard_error": 0.8198962972666762,
+          "confidence_level": 0.95,
+          "confidence_interval": [
+            1.9315379702866835,
+            5.712906474157762
+          ],
+          "largest_effect_not_ruled_out": 5.712906474157762,
+          "minimum_detectable_effect": 2.624422167777011,
+          "target_power": 0.8,
+          "power_against_declared_effects": {
+            "2": 0.5725322995385116,
+            "1": 0.18995674182787892,
+            "0.5": 0.08401984550765726
+          },
+          "cases_required_for_effects": {
+            "2": 14,
+            "1": 50,
+            "0.5": 198
+          },
+          "paired_t": {
+            "statistic": 4.6618361797272785,
+            "p_value": 0.0016195838200843702,
+            "test": "two-sided one-sample t on paired differences"
+          }
+        }
+      },
+      "strict": {
+        "advantage_survives": {
+          "cases": 9,
+          "mean_paired_difference": 2.8666666666666663,
+          "standard_deviation": 3.170567772497538,
+          "standard_error": 1.056855924165846,
+          "confidence_level": 0.95,
+          "confidence_interval": [
+            0.4295525352252052,
+            5.303780798108127
+          ],
+          "largest_effect_not_ruled_out": 5.303780798108127,
+          "minimum_detectable_effect": 3.382910893455546,
+          "target_power": 0.8,
+          "power_against_declared_effects": {
+            "2": 0.3847839561685357,
+            "1": 0.13327901169628112,
+            "0.5": 0.07035172810103335
+          },
+          "cases_required_for_effects": {
+            "2": 22,
+            "1": 85,
+            "0.5": 328
+          },
+          "paired_t": {
+            "statistic": 2.712447932701201,
+            "p_value": 0.026557282674796314,
+            "test": "two-sided one-sample t on paired differences"
+          }
+        },
+        "advantage_lost_to_time": {
+          "cases": 9,
+          "mean_paired_difference": 5.777777777777778,
+          "standard_deviation": 5.2654006917275,
+          "standard_error": 1.7551335639091665,
+          "confidence_level": 0.95,
+          "confidence_interval": [
+            1.7304325215676144,
+            9.825123033987941
+          ],
+          "largest_effect_not_ruled_out": 9.825123033987941,
+          "minimum_detectable_effect": 5.618041510723504,
+          "target_power": 0.8,
+          "power_against_declared_effects": {
+            "2": 0.1718185417001641,
+            "1": 0.07964033184782181,
+            "0.5": 0.05733216836588369
+          },
+          "cases_required_for_effects": {
+            "2": 57,
+            "1": 230,
+            "0.5": 892
+          },
+          "paired_t": {
+            "statistic": 3.291930538271442,
+            "p_value": 0.01099033383135173,
+            "test": "two-sided one-sample t on paired differences"
+          }
+        }
+      }
+    }
+  }
+}
