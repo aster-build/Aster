@@ -48,6 +48,9 @@ def decision(state, record, pick):
             'candidates_considered': len(record.get('eligible_ids') or slate),
             'rank_in_slate': next((row['rank'] for row in slate
                                    if row['compound_id'] == pick['compound_id']), None),
+            # None means the round predates propensity logging; it is never back-filled.
+            'selection_propensity': next((row.get('propensity') for row in slate
+                                          if row['compound_id'] == pick['compound_id']), None),
             'nearest_measured_id': pick['nearest_measured_id'],
             'nearest_measured_value': pick['nearest_measured_value'],
             'similarity_to_nearest_measured': pick['similarity'],
@@ -80,6 +83,38 @@ def decision(state, record, pick):
     entry['verdict'] = ('improved_on_what_was_known' if entry['outcome']['improved_on_best_known']
                         else 'did_not_improve_on_what_was_known')
     return entry
+
+
+def off_policy(round_record):
+    """Can this round support asking what a different selection policy would have found?
+
+    That analysis reweights each measured pick by one over the probability that the
+    policy in force would have picked it. It needs three things: the probability was
+    stored at decision time, the batch actually followed the policy, and the policy gave
+    passed-over candidates some chance. A greedy policy gives them none.
+    """
+    logged = round_record.get('propensity')
+    if logged is None:
+        return {'propensity_logged': False, 'deterministic': None, 'batch_followed_policy': None,
+                'usable_for_off_policy_evaluation': False,
+                'reason': 'This round was decided before selection propensities were recorded. '
+                          'They cannot be reconstructed afterwards, so none are reported.'}
+    entry = {'propensity_logged': True, 'deterministic': logged['deterministic'],
+             'batch_followed_policy': logged['batch_followed_policy'],
+             'candidates_with_nonzero_propensity': logged['nonzero'],
+             'candidates': logged['candidates']}
+    if not logged['batch_followed_policy']:
+        reason = ('A person replaced the policy\'s picks when committing this batch. The stored '
+                  'propensities describe the policy, not the person, so they cannot reweight '
+                  'what was measured.')
+    elif logged['deterministic']:
+        reason = ('The policy picked with certainty: every passed-over candidate had probability '
+                  'zero, so no reweighting can say how a different policy would have scored. '
+                  'That needs some randomness in selection, such as a matched random batch.')
+    else:
+        reason = 'Propensities were logged, the batch followed the policy, and it was not certain.'
+    usable = logged['batch_followed_policy'] and not logged['deterministic']
+    return {**entry, 'usable_for_off_policy_evaluation': usable, 'reason': reason}
 
 
 def record(path_or_state):
@@ -162,6 +197,7 @@ def review(path_or_state):
             'within_batch_rank_agreement': agreement(predicted, observed),
             'best_measured_this_round': (max(observed) if sign > 0 else min(observed)) if observed else None,
             'best_value_known_before': picks[0]['why']['best_value_known_then'] if picks else None,
+            'off_policy': off_policy(round_record),
         })
     measured = [entry for entry in entries if entry['outcome']['status'] == 'measured']
     errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured])
@@ -172,7 +208,10 @@ def review(path_or_state):
                    'improved_on_best_known': sum(entry['outcome']['improved_on_best_known']
                                                  for entry in measured),
                    'mean_absolute_error': float(errors.mean()) if len(errors) else None,
-                   'awaiting_result': sum(entry['verdict'] == PENDING for entry in entries)},
+                   'awaiting_result': sum(entry['verdict'] == PENDING for entry in entries),
+                   'rounds_usable_for_off_policy_evaluation': sum(
+                       round_entry['off_policy']['usable_for_off_policy_evaluation']
+                       for round_entry in rounds)},
         'limitations': [
             'Only picks have outcomes. Rejected candidates were never measured, so this cannot '
             'say whether a different batch would have been better.',
@@ -180,6 +219,9 @@ def review(path_or_state):
             'against the current model.',
             'Improvement is relative to the best measurement known when the pick was made, '
             'which is a campaign milestone, not a biological claim.',
+            'Selection propensities are stored per candidate, but under the greedy policy they '
+            'are all 1 or 0, so they show which candidates the policy ruled out completely; '
+            'they do not by themselves allow an estimate of what another policy would have found.',
         ],
     }
 

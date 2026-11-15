@@ -167,3 +167,39 @@ def test_decision_record_reports_the_model_as_it_was_not_as_it_is(tmp_path, inpu
     assert rounds[1]['basis']['training_sha256'] != rounds[2]['basis']['training_sha256']
     assert rounds[1]['why']['measurements_known_then'] == 32
     assert rounds[2]['why']['measurements_known_then'] == 40
+
+
+def test_each_decision_carries_the_propensity_stored_when_it_was_made(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    assert all(entry['why']['selection_propensity'] == 1.0 for entry in record(path))
+    off = review(path)['rounds'][0]['off_policy']
+    assert off['propensity_logged'] and off['deterministic'] and off['batch_followed_policy']
+    assert off['candidates_with_nonzero_propensity'] == 8 and off['candidates'] == 24
+    # A greedy policy logs propensities but gives passed-over candidates no chance at all.
+    assert off['usable_for_off_policy_evaluation'] is False
+    assert 'probability zero' in off['reason']
+    assert review(path)['totals']['rounds_usable_for_off_policy_evaluation'] == 0
+
+
+def test_rounds_from_before_propensity_logging_are_not_back_filled(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    from aster.campaign import transaction
+    with transaction(path, True) as state:
+        del state['rounds'][0]['propensity']
+        for row in state['rounds'][0]['slate']:
+            del row['propensity']
+    assert all(entry['why']['selection_propensity'] is None for entry in record(path))
+    off = review(path)['rounds'][0]['off_policy']
+    assert off['propensity_logged'] is False and off['usable_for_off_policy_evaluation'] is False
+    assert 'cannot be reconstructed' in off['reason']
+
+
+def test_only_a_followed_non_certain_policy_supports_off_policy_evaluation():
+    from aster.decisions import off_policy
+    base = {'deterministic': False, 'batch_followed_policy': True, 'nonzero': 24, 'candidates': 24}
+    assert off_policy({'propensity': base})['usable_for_off_policy_evaluation'] is True
+    overridden = off_policy({'propensity': {**base, 'batch_followed_policy': False}})
+    assert overridden['usable_for_off_policy_evaluation'] is False
+    assert 'person replaced' in overridden['reason']

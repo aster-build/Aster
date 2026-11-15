@@ -419,6 +419,10 @@ def create_app(storage=None):
                      'selection_reason': 'user_locked' if c in locked else 'user_selected',
                      'outside_diagnostic_range': not 0 <= scores[c]['prediction'] <= 14}
                     for rank, c in enumerate(selected, 1)]
+                # The slate keeps the policy's propensities; say whether the batch obeyed them.
+                if 'propensity' in record:
+                    policy_picks = {row['compound_id'] for row in record['slate'] if row['selected']}
+                    record['propensity']['batch_followed_policy'] = set(selected) == policy_picks
             record['preview_id'] = body.preview_id
             for row in record['recommendations']:
                 state['compounds'][row['compound_id']]['status'] = 'pending'

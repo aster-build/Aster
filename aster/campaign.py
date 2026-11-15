@@ -171,6 +171,33 @@ def constrain(path, ids, mode):
         event(state, 'constraints', {'ids': ids, 'mode': mode})
 
 
+def greedy_propensity(ranked, locked, batch_size):
+    """Probability that the greedy policy would select each eligible candidate.
+
+    Written into the slate when the batch is decided, because it cannot be rebuilt
+    later: a future analysis that asks "what would a different policy have found?"
+    has to reweight each measured pick by how likely the policy in force was to pick
+    it. Greedy selection with a fixed tie-break is deterministic, so every value is
+    exactly 1.0 or 0.0. Locked compounds are 1.0 because the user forced them in.
+    Excluded compounds never reach the slate; their propensity is 0.0 by construction.
+    """
+    chosen = set(locked) | set(ranked[:batch_size-len(locked)])
+    return {cid: 1.0 if cid in chosen else 0.0 for cid in list(locked) + list(ranked)}
+
+
+def propensity_summary(propensity, followed=True):
+    """Round-level statement of what the stored propensities can and cannot support."""
+    values = list(propensity.values())
+    return {'of': 'the policy in force, computed when the batch was decided',
+            'deterministic': all(value in (0.0, 1.0) for value in values),
+            'nonzero': sum(value > 0 for value in values),
+            'candidates': len(values),
+            # False when a person replaced the policy's picks at commit time. The stored
+            # propensities still describe the policy, but the batch was chosen by a person
+            # whose probabilities nobody recorded.
+            'batch_followed_policy': followed}
+
+
 def propose(path, batch_size=8):
     if not isinstance(batch_size, int) or isinstance(batch_size, bool) or batch_size < 1:
         raise ValueError('Batch size must be a positive integer')
@@ -206,9 +233,10 @@ def propose(path, batch_size=8):
         margin = EXTRAPOLATION_MARGIN * float(np.std(y)) if len(y) > 1 else 0.0
         low, high = float(y.min()) - margin, float(y.max()) + margin
         selected = locked + ranked[:batch_size-len(locked)]
+        propensity = greedy_propensity(ranked, locked, batch_size)
         # The full ranked slate records what was considered and rejected, not only the picks.
         slate = [{'rank': rank, 'compound_id': cid, 'prediction': predictions[by_id[cid]],
-                  'selected': cid in selected}
+                  'selected': cid in selected, 'propensity': propensity[cid]}
                  for rank, cid in enumerate(sorted(pool, key=lambda c: (-sign * predictions[by_id[c]], c)), 1)]
         rows = []
         for rank, cid in enumerate(selected, 1):
@@ -224,7 +252,8 @@ def propose(path, batch_size=8):
         round_record = {'round': len(state['rounds']) + 1, 'created_at': stamp(), 'status': 'pending',
                         'training': snapshot, 'training_sha256': hashlib.sha256(encoded(snapshot).encode()).hexdigest(),
                         'eligible_ids': pool, 'constraints': {cid: compounds[cid]['constraint'] for cid in pool},
-                        'recommendations': rows, 'slate': slate, 'results': {}, 'recipe': state['recipe'],
+                        'recommendations': rows, 'slate': slate, 'propensity': propensity_summary(propensity),
+                        'results': {}, 'recipe': state['recipe'],
                         'policy': {'id': state['recipe']['policy'], 'rule': 'rank by predicted value in the declared direction',
                                    'locked': locked, 'excluded': sorted(cid for cid, c in compounds.items()
                                                                         if c['constraint'] == 'excluded')},

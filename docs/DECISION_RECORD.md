@@ -53,6 +53,32 @@ the recipe, library versions and module hashes. Two additions complete the recor
   selected, so the record shows what was *rejected*, not only what was picked.
 - **`policy`** — which rule produced the batch, plus the locked and excluded compounds
   in force at the time.
+- **`propensity`** on every slate row — the probability that the policy in force would
+  have selected that candidate, written when the batch is decided. A round-level
+  `propensity` summary says whether the values are certain (all 1 or 0), how many
+  candidates had any chance, and whether the committed batch actually followed the
+  policy (`batch_followed_policy` is false when a person replaced the picks in the
+  dashboard). The slate's `selected` flag likewise means "the policy picked it", not
+  "it was committed"; the committed batch is `recommendations`.
+
+## Selection propensity, and what it cannot do yet
+
+A later question this record should be able to answer is "what would a different
+selection policy have found?". The standard way to ask it from logged data is to weight
+each measured pick by one over the probability that the policy in force would have
+picked it. That probability depends on the model, the pool and the code at the moment
+of decision, so it has to be written down then; it cannot be reconstructed afterwards.
+That is why it is stored now, and why rounds from before this change report it as
+`None` instead of being back-filled.
+
+Today the answer is still no. The greedy policy picks the top-ranked candidates with
+certainty, so every passed-over candidate has probability exactly zero, and dividing by
+zero has no answer: no reweighting can say how those candidates would have scored.
+`review` reports this per round under `off_policy`, with
+`usable_for_off_policy_evaluation: false` and the reason. Turning it into a yes needs
+some randomness in what gets measured, such as the matched random shadow batch in the
+build queue or a policy that is not fully greedy. Which of those to adopt is a product
+decision, not something this change makes.
 
 ## Asking the question
 
