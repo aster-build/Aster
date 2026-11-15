@@ -74,7 +74,7 @@ reads the queue, it does not plan.
   (`aster/temporal_discovery.py`) shows ranking still beats random picking by
   +5.9 compounds per 40 assays, against the +13.3 a random split would claim.
 
-- [ ] **5. Log each candidate's selection propensity at decision time.** For
+- [x] **5. Log each candidate's selection propensity at decision time.** For
   every candidate in a committed round's ranked slate, store the probability that
   the policy in force would have selected it. One column, written at commit time.
   This cannot be reconstructed afterwards, which is why it is near the top:
@@ -85,6 +85,10 @@ reads the queue, it does not plan.
   2026-11-14. The cost of the delay is small for now: every campaign so far is
   a retrospective replay that can be re-run, so no real decision is lost while
   this waits. Keep it next once the holdout is in.
+  Done. Every slate row stores `propensity`, and `review` reports per round
+  whether the log could support off-policy analysis. Under the greedy policy it
+  cannot: every value is 1 or 0, so passed-over candidates had no chance. Item 6
+  (or a decision to add randomness to selection) is what makes the log usable.
 
 - [ ] **6. Log a matched random shadow batch with every committed batch.** The
   same size, drawn from the same pool, recorded but never run. It costs nothing
