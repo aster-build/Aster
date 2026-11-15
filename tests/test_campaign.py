@@ -4,8 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pytest
 
-from aster.campaign import (constrain, create, export_batch, import_results, load,
-                            propose, summary)
+from aster.campaign import (constrain, create, export_batch, greedy_propensity, import_results,
+                            load, propose, summary)
 from aster.data import fingerprints
 
 
@@ -183,3 +183,26 @@ def test_failed_model_fit_rolls_back_and_can_retry(campaign, monkeypatch):
     assert load(campaign) == before
     monkeypatch.setattr(StableRidge, 'fit', original)
     assert propose(campaign)['round'] == 1
+
+
+def test_greedy_propensity_is_certain_for_picks_and_zero_for_the_rest():
+    propensity = greedy_propensity(['a', 'b', 'c', 'd'], ['z'], 3)
+    assert propensity == {'z': 1.0, 'a': 1.0, 'b': 1.0, 'c': 0.0, 'd': 0.0}
+    assert greedy_propensity(['a', 'b'], ['y', 'z'], 2) == {'y': 1.0, 'z': 1.0, 'a': 0.0, 'b': 0.0}
+
+
+def test_every_slate_row_stores_its_selection_propensity_at_decision_time(campaign):
+    constrain(campaign, ['c05'], 'locked')
+    constrain(campaign, ['c01'], 'excluded')
+    first = propose(campaign)
+    slate = first['slate']
+    assert all(row['propensity'] == (1.0 if row['selected'] else 0.0) for row in slate)
+    assert next(row for row in slate if row['compound_id'] == 'c05')['propensity'] == 1.0
+    # Excluded compounds are never eligible, so they are absent rather than stored as zero.
+    assert 'c01' not in {row['compound_id'] for row in slate}
+    assert sum(row['propensity'] for row in slate) == 8
+    assert first['propensity'] == {'of': 'the policy in force, computed when the batch was decided',
+                                   'deterministic': True, 'nonzero': 8, 'candidates': 23,
+                                   'batch_followed_policy': True}
+    # Stored, not recomputed: the value read back later is the one written now.
+    assert load(campaign)['rounds'][0]['slate'] == slate
