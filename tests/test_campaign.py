@@ -4,8 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pytest
 
-from aster.campaign import (constrain, create, export_batch, import_results, load,
-                            propose, summary)
+from aster.campaign import (constrain, create, export_batch, greedy_propensity, import_results,
+                            load, propose, shadow_batch, shadow_seed, summary)
 from aster.data import fingerprints
 
 
@@ -183,3 +183,77 @@ def test_failed_model_fit_rolls_back_and_can_retry(campaign, monkeypatch):
     assert load(campaign) == before
     monkeypatch.setattr(StableRidge, 'fit', original)
     assert propose(campaign)['round'] == 1
+
+
+def test_greedy_propensity_is_certain_for_picks_and_zero_for_the_rest():
+    propensity = greedy_propensity(['a', 'b', 'c', 'd'], ['z'], 3)
+    assert propensity == {'z': 1.0, 'a': 1.0, 'b': 1.0, 'c': 0.0, 'd': 0.0}
+    assert greedy_propensity(['a', 'b'], ['y', 'z'], 2) == {'y': 1.0, 'z': 1.0, 'a': 0.0, 'b': 0.0}
+
+
+def test_every_slate_row_stores_its_selection_propensity_at_decision_time(campaign):
+    constrain(campaign, ['c05'], 'locked')
+    constrain(campaign, ['c01'], 'excluded')
+    first = propose(campaign)
+    slate = first['slate']
+    assert all(row['propensity'] == (1.0 if row['selected'] else 0.0) for row in slate)
+    assert next(row for row in slate if row['compound_id'] == 'c05')['propensity'] == 1.0
+    # Excluded compounds are never eligible, so they are absent rather than stored as zero.
+    assert 'c01' not in {row['compound_id'] for row in slate}
+    assert sum(row['propensity'] for row in slate) == 8
+    assert first['propensity'] == {'of': 'the policy in force, computed when the batch was decided',
+                                   'deterministic': True, 'nonzero': 8, 'candidates': 23,
+                                   'batch_followed_policy': True}
+    # Stored, not recomputed: the value read back later is the one written now.
+    assert load(campaign)['rounds'][0]['slate'] == slate
+
+
+def test_shadow_batch_matches_size_and_constraints_and_draws_uniformly():
+    pool = [f'c{i:02}' for i in range(20)]
+    shadow = shadow_batch(pool, ['c03'], 5, seed=7)
+    assert len(shadow['ids']) == 5 == len(set(shadow['ids'])) == shadow['size']
+    assert shadow['ids'][0] == 'c03' and set(shadow['ids']) <= set(pool)
+    assert shadow['propensity_unlocked'] == 4 / 19 and shadow['propensity_locked'] == 1.0
+    assert shadow['assayed'] is False and shadow['policy'] == 'random'
+    assert shadow_batch(pool, ['c03'], 5, seed=7) == shadow
+    # Uniform: over many seeds every unlocked candidate is drawn about equally often.
+    counts = {cid: 0 for cid in pool if cid != 'c03'}
+    for seed in range(4000):
+        for cid in shadow_batch(pool, ['c03'], 5, seed)['ids'][1:]:
+            counts[cid] += 1
+    expected = 4000 * 4 / 19
+    assert all(abs(count - expected) < 0.12 * expected for count in counts.values())
+
+
+def test_shadow_seed_ignores_pool_order_and_changes_with_round():
+    assert shadow_seed('abc', ['b', 'a'], 1) == shadow_seed('abc', ['a', 'b'], 1)
+    assert shadow_seed('abc', ['a', 'b'], 1) != shadow_seed('abc', ['a', 'b'], 2)
+    assert shadow_seed('abc', ['a', 'b'], 1) != shadow_seed('abd', ['a', 'b'], 1)
+
+
+def test_every_round_records_a_shadow_batch_that_is_never_sent_to_the_assay(campaign, tmp_path):
+    constrain(campaign, ['c05'], 'locked')
+    constrain(campaign, ['c01'], 'excluded')
+    first = propose(campaign)
+    shadow = first['shadow']
+    assert len(shadow['ids']) == len(first['recommendations']) == 8
+    assert 'c05' in shadow['ids'] and 'c01' not in shadow['ids']
+    assert set(shadow['ids']) <= set(first['eligible_ids'])
+    assert shadow['pool_size'] == 23 and shadow['propensity_unlocked'] == 7 / 22
+    assert shadow['seed'] == shadow_seed(first['training_sha256'], first['eligible_ids'], 1)
+    state = load(campaign)
+    picked = {r['compound_id'] for r in first['recommendations']}
+    for cid in set(shadow['ids']) - picked:
+        assert state['compounds'][cid]['status'] == 'available'
+    exported = tmp_path/'batch.csv'
+    export_batch(campaign, 1, exported)
+    assert {r['compound_id'] for r in csv.DictReader(exported.open())} == picked
+    assert state['rounds'][0]['shadow'] == shadow
+
+
+def test_shadow_does_not_depend_on_candidate_file_order(campaign, inputs, tmp_path):
+    rows = list(csv.DictReader(inputs[1].open()))[::-1]
+    reordered = csv_file(tmp_path/'reordered.csv', ['compound_id', 'smiles'], rows)
+    other = tmp_path/'other.sqlite'
+    create(other, inputs[0], reordered, name='Test', assay='assay-1', endpoint='pKi')
+    assert propose(campaign)['shadow']['ids'] == propose(other)['shadow']['ids']

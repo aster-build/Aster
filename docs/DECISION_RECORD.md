@@ -53,6 +53,87 @@ the recipe, library versions and module hashes. Two additions complete the recor
   selected, so the record shows what was *rejected*, not only what was picked.
 - **`policy`** — which rule produced the batch, plus the locked and excluded compounds
   in force at the time.
+- **`propensity`** on every slate row — the probability that the policy in force would
+  have selected that candidate, written when the batch is decided. A round-level
+  `propensity` summary says whether the values are certain (all 1 or 0), how many
+  candidates had any chance, and whether the committed batch actually followed the
+  policy (`batch_followed_policy` is false when a person replaced the picks in the
+  dashboard). The slate's `selected` flag likewise means "the policy picked it", not
+  "it was committed"; the committed batch is `recommendations`.
+- **`shadow`** — a matched random batch, drawn when the batch is decided and never
+  assayed. See below.
+
+## Selection propensity, and what it cannot do yet
+
+A later question this record should be able to answer is "what would a different
+selection policy have found?". The standard way to ask it from logged data is to weight
+each measured pick by one over the probability that the policy in force would have
+picked it. That probability depends on the model, the pool and the code at the moment
+of decision, so it has to be written down then; it cannot be reconstructed afterwards.
+That is why it is stored now, and why rounds from before this change report it as
+`None` instead of being back-filled.
+
+Today the answer is still no. The greedy policy picks the top-ranked candidates with
+certainty, so every passed-over candidate has probability exactly zero, and dividing by
+zero has no answer: no reweighting can say how those candidates would have scored.
+`review` reports this per round under `off_policy`, with
+`usable_for_off_policy_evaluation: false` and the reason. Turning it into a yes needs
+some randomness in what gets measured: a policy that is not fully greedy, or assaying
+some of the shadow batch described next. Which of those to adopt is a product decision,
+not something this record makes.
+
+## The matched random shadow batch
+
+Every round also records a second batch that nobody runs: the same size as the real
+batch, under the same locks and exclusions, with its free slots drawn uniformly at
+random from the same eligible pool. It costs nothing, because it is never sent to the
+assay: shadow compounds are not marked pending, never appear in an export, and are not
+in the campaign view the dashboard reads.
+
+Three choices fix what it means:
+
+- **The draw cannot see the model.** Its seed is a hash of the training snapshot, the
+  eligible ids and the round number, so it cannot lean toward compounds the model likes,
+  and re-proposing the same round reproduces the same shadow. The seed and its basis are
+  stored with it.
+- **The policy's own picks stay in the draw.** So the two batches can share compounds
+  (about half a compound per batch of eight, on average, in the replay below). Leaving the picks out would
+  make the shadow a sample of "what greedy rejected" rather than of a random policy.
+  Every unlocked candidate has the same chance of being drawn, stored as
+  `propensity_unlocked`.
+- **A dashboard override does not redraw it.** If a person replaces the picks, the
+  shadow drawn with the preview is kept as drawn, and `review` says when its size no
+  longer matches the committed batch.
+
+`review` reports the shadow per round under `shadow`, and each decision says whether
+the shadow also drew that compound (`also_in_shadow_batch`). A comparison between the
+two batches is reported **only when every shadow compound has a measurement**. A shadow
+compound can end up measured because the policy picked it, in that round or a later
+one, but that measurement exists because the policy wanted it, so comparing a partial
+shadow would quietly compare the policy against itself. In a live campaign that normally
+means no comparison is ever reported; in a retrospective replay with known outcomes it
+means every round.
+
+### What it reports in a replay with known outcomes
+
+`scripts/shadow_replay.py` runs 20 replays of the public dashboard example (MoleculeACE
+CHEMBL238, 160 compounds), each from a different starting set of 32, for four rounds of
+eight, and reads the record's own shadow comparison with the hidden values filled in for
+the shadow compounds only:
+
+| Measure | Result |
+|---|---|
+| Rounds compared | 80 (20 replays × 4 rounds) |
+| Batch mean minus shadow mean, averaged per replay | +0.63 pKi (SD 0.25 across replays) |
+| Replays where the batch mean beat the shadow mean | 20 of 20 (Wilcoxon p = 2 × 10⁻⁶) |
+| Rounds where the batch's best compound beat the shadow's best | 54 of 80, 3 tied |
+| Compounds shared between the two batches, per round | 0.54 on average |
+
+This shows the mechanism working, not how the greedy policy performs in general: all 20
+replays reuse the same 160 compounds from one target, so they are not independent
+samples of chemistry. The more useful reading is the gap between the two rows: the
+greedy batch is reliably better *on average*, but its single best compound beats a
+random batch's best only about two rounds in three.
 
 ## Asking the question
 
@@ -109,6 +190,8 @@ over-read:
 2. **Error is measured against the model of that round**, not the current model.
 3. **"Improved" means it beat the best measurement known when the pick was made.** That
    is a campaign milestone, not a biological or clinical claim.
+4. **The shadow batch is never assayed.** It is compared with the real batch only when
+   every shadow compound has a measurement.
 
 ## What this deliberately does not do
 

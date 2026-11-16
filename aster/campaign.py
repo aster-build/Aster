@@ -171,6 +171,71 @@ def constrain(path, ids, mode):
         event(state, 'constraints', {'ids': ids, 'mode': mode})
 
 
+def greedy_propensity(ranked, locked, batch_size):
+    """Probability that the greedy policy would select each eligible candidate.
+
+    Written into the slate when the batch is decided, because it cannot be rebuilt
+    later: a future analysis that asks "what would a different policy have found?"
+    has to reweight each measured pick by how likely the policy in force was to pick
+    it. Greedy selection with a fixed tie-break is deterministic, so every value is
+    exactly 1.0 or 0.0. Locked compounds are 1.0 because the user forced them in.
+    Excluded compounds never reach the slate; their propensity is 0.0 by construction.
+    """
+    chosen = set(locked) | set(ranked[:batch_size-len(locked)])
+    return {cid: 1.0 if cid in chosen else 0.0 for cid in list(locked) + list(ranked)}
+
+
+def propensity_summary(propensity, followed=True):
+    """Round-level statement of what the stored propensities can and cannot support."""
+    values = list(propensity.values())
+    return {'of': 'the policy in force, computed when the batch was decided',
+            'deterministic': all(value in (0.0, 1.0) for value in values),
+            'nonzero': sum(value > 0 for value in values),
+            'candidates': len(values),
+            # False when a person replaced the policy's picks at commit time. The stored
+            # propensities still describe the policy, but the batch was chosen by a person
+            # whose probabilities nobody recorded.
+            'batch_followed_policy': followed}
+
+
+def shadow_seed(training_sha256, eligible_ids, round_number):
+    """Seed for the shadow draw, fixed by what the round was decided from.
+
+    It depends on the training snapshot, the eligible pool and the round number only,
+    never on predictions, so the draw cannot lean toward compounds the model likes, and
+    re-proposing the same round reproduces the same shadow batch.
+    """
+    basis = encoded({'training_sha256': training_sha256, 'eligible_ids': sorted(eligible_ids),
+                     'round': round_number})
+    return int(hashlib.sha256(basis.encode()).hexdigest()[:16], 16)
+
+
+def shadow_batch(pool, locked, batch_size, seed):
+    """A matched random batch: recorded with every committed batch, never assayed.
+
+    Same size and same constraints as the real batch (locked compounds in, excluded
+    ones out), with the free slots filled uniformly at random from the rest of the same
+    eligible pool. The policy's own picks stay in the draw, so the two batches can
+    overlap; leaving them out would make the shadow a sample of "what greedy rejected"
+    rather than of a random policy. Every unlocked candidate has the same chance of
+    being drawn, which is stored as the shadow policy's propensity.
+    """
+    locked_set = set(locked)
+    free = sorted(cid for cid in pool if cid not in locked_set)
+    slots = batch_size - len(locked)
+    order = np.random.default_rng(seed).permutation(len(free))
+    drawn = [free[i] for i in order[:slots]]
+    return {'policy': 'random',
+            'rule': 'same size and constraints as the batch; free slots drawn uniformly '
+                    'at random from the same eligible pool',
+            'ids': list(locked) + drawn, 'size': batch_size, 'locked': list(locked),
+            'pool_size': len(pool), 'seed': seed,
+            'seed_basis': 'sha256 of the training snapshot hash, the eligible ids and the round number',
+            'propensity_unlocked': slots / len(free) if free else 0.0,
+            'propensity_locked': 1.0,
+            'assayed': False}
+
+
 def propose(path, batch_size=8):
     if not isinstance(batch_size, int) or isinstance(batch_size, bool) or batch_size < 1:
         raise ValueError('Batch size must be a positive integer')
@@ -206,9 +271,10 @@ def propose(path, batch_size=8):
         margin = EXTRAPOLATION_MARGIN * float(np.std(y)) if len(y) > 1 else 0.0
         low, high = float(y.min()) - margin, float(y.max()) + margin
         selected = locked + ranked[:batch_size-len(locked)]
+        propensity = greedy_propensity(ranked, locked, batch_size)
         # The full ranked slate records what was considered and rejected, not only the picks.
         slate = [{'rank': rank, 'compound_id': cid, 'prediction': predictions[by_id[cid]],
-                  'selected': cid in selected}
+                  'selected': cid in selected, 'propensity': propensity[cid]}
                  for rank, cid in enumerate(sorted(pool, key=lambda c: (-sign * predictions[by_id[c]], c)), 1)]
         rows = []
         for rank, cid in enumerate(selected, 1):
@@ -221,10 +287,17 @@ def propose(path, batch_size=8):
                          'outside_diagnostic_range': not low <= predictions[i] <= high})
         coef, intercept = model.linear_coefficients()
         snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
-        round_record = {'round': len(state['rounds']) + 1, 'created_at': stamp(), 'status': 'pending',
-                        'training': snapshot, 'training_sha256': hashlib.sha256(encoded(snapshot).encode()).hexdigest(),
+        training_sha256 = hashlib.sha256(encoded(snapshot).encode()).hexdigest()
+        number = len(state['rounds']) + 1
+        shadow = shadow_batch(pool, locked, batch_size, shadow_seed(training_sha256, pool, number))
+        round_record = {'round': number, 'created_at': stamp(), 'status': 'pending',
+                        'training': snapshot, 'training_sha256': training_sha256,
                         'eligible_ids': pool, 'constraints': {cid: compounds[cid]['constraint'] for cid in pool},
-                        'recommendations': rows, 'slate': slate, 'results': {}, 'recipe': state['recipe'],
+                        'recommendations': rows, 'slate': slate, 'propensity': propensity_summary(propensity),
+                        # Recorded for later comparison only. Shadow compounds are never marked
+                        # pending, exported or sent to the assay.
+                        'shadow': shadow,
+                        'results': {}, 'recipe': state['recipe'],
                         'policy': {'id': state['recipe']['policy'], 'rule': 'rank by predicted value in the declared direction',
                                    'locked': locked, 'excluded': sorted(cid for cid, c in compounds.items()
                                                                         if c['constraint'] == 'excluded')},
