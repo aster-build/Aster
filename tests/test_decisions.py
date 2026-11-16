@@ -203,3 +203,70 @@ def test_only_a_followed_non_certain_policy_supports_off_policy_evaluation():
     overridden = off_policy({'propensity': {**base, 'batch_followed_policy': False}})
     assert overridden['usable_for_off_policy_evaluation'] is False
     assert 'person replaced' in overridden['reason']
+
+
+def measure_batch(path, tmp_path, round_record, value='7.0'):
+    import_results(path, round_record['round'],
+                   csv_file(tmp_path/f"results-{round_record['round']}.csv", ['compound_id', 'status', 'value'],
+                            [{'compound_id': r['compound_id'], 'status': 'measured', 'value': value}
+                             for r in round_record['recommendations']]))
+
+
+def test_each_pick_says_whether_the_shadow_batch_also_drew_it(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    first = propose(path)
+    shadow_ids = set(first['shadow']['ids'])
+    for entry in record(path):
+        assert entry['why']['also_in_shadow_batch'] == (entry['compound_id'] in shadow_ids)
+
+
+def test_an_unmeasured_shadow_batch_is_reported_but_never_compared(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    first = propose(path)
+    measure_batch(path, tmp_path, first)
+    report = review(path)
+    shadow = report['rounds'][0]['shadow']
+    shared = len(set(first['shadow']['ids']) & {r['compound_id'] for r in first['recommendations']})
+    assert shadow['logged'] and shadow['size'] == 8 and shadow['matches_committed_batch_size']
+    assert shadow['assayed'] is False and shadow['shared_with_committed_batch'] == shared
+    # Overlapping compounds were measured because the policy picked them, which is not random.
+    assert shadow['shadow_members_measured'] == shared and shadow['comparison'] is None
+    assert 'not against a random draw' in shadow['reason']
+    assert report['totals']['rounds_with_shadow_batch'] == 1
+    assert report['totals']['shadow_batches_comparable'] == 0
+    assert 'never assayed' in report['rounds'][0]['off_policy']['reason']
+
+
+@pytest.mark.parametrize('direction', ['higher_is_better', 'lower_is_better'])
+def test_a_fully_measured_shadow_batch_is_compared_in_the_declared_direction(tmp_path, inputs, direction):
+    from aster.campaign import transaction
+    path = campaign_at(tmp_path, inputs, direction=direction)
+    first = propose(path)
+    measure_batch(path, tmp_path, first, value='7.0')
+    # A retrospective replay knows every outcome; stand that in for the shadow compounds.
+    with transaction(path, True) as state:
+        for cid in first['shadow']['ids']:
+            if state['compounds'][cid]['status'] != 'measured':
+                state['compounds'][cid].update(status='measured', value=6.0)
+    comparison = review(path)['rounds'][0]['shadow']['comparison']
+    assert comparison['batch_best'] == 7.0 and comparison['batch_mean'] == 7.0
+    shared = set(first['shadow']['ids']) & {r['compound_id'] for r in first['recommendations']}
+    # Shared compounds carry the batch's 7.0; the rest of the shadow measured 6.0.
+    if direction == 'higher_is_better':
+        assert comparison['shadow_best'] == (7.0 if shared else 6.0)
+        assert comparison['batch_better_on_best'] == (not shared)
+    else:
+        assert comparison['shadow_best'] == 6.0 and comparison['batch_better_on_best'] is False
+    assert review(path)['totals']['shadow_batches_comparable'] == 1
+
+
+def test_rounds_from_before_shadow_batches_are_not_back_filled(tmp_path, inputs):
+    from aster.campaign import transaction
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    with transaction(path, True) as state:
+        del state['rounds'][0]['shadow']
+    assert all(entry['why']['also_in_shadow_batch'] is None for entry in record(path))
+    shadow = review(path)['rounds'][0]['shadow']
+    assert shadow['logged'] is False and shadow['comparison'] is None
+    assert 'before shadow batches' in shadow['reason']

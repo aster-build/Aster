@@ -51,6 +51,9 @@ def decision(state, record, pick):
             # None means the round predates propensity logging; it is never back-filled.
             'selection_propensity': next((row.get('propensity') for row in slate
                                           if row['compound_id'] == pick['compound_id']), None),
+            # None means the round predates shadow batches; never back-filled.
+            'also_in_shadow_batch': (pick['compound_id'] in record['shadow']['ids']
+                                     if 'shadow' in record else None),
             'nearest_measured_id': pick['nearest_measured_id'],
             'nearest_measured_value': pick['nearest_measured_value'],
             'similarity_to_nearest_measured': pick['similarity'],
@@ -110,11 +113,59 @@ def off_policy(round_record):
     elif logged['deterministic']:
         reason = ('The policy picked with certainty: every passed-over candidate had probability '
                   'zero, so no reweighting can say how a different policy would have scored. '
-                  'That needs some randomness in selection, such as a matched random batch.')
+                  'That needs some randomness in what gets measured. A matched random shadow '
+                  'batch is recorded with rounds that have one, but it is never assayed, so it '
+                  'does not change this.')
     else:
         reason = 'Propensities were logged, the batch followed the policy, and it was not certain.'
     usable = logged['batch_followed_policy'] and not logged['deterministic']
     return {**entry, 'usable_for_off_policy_evaluation': usable, 'reason': reason}
+
+
+def shadow(state, round_record):
+    """What the round's matched random batch can report, judged from what is known now.
+
+    The shadow batch is never assayed. A shadow compound can still end up measured,
+    because the policy picked it in this round or a later one, but those measurements
+    are not a random sample: they exist because the policy wanted them. So a comparison
+    with the real batch is reported only when every shadow compound has a measurement.
+    """
+    logged = round_record.get('shadow')
+    if logged is None:
+        return {'logged': False, 'comparison': None,
+                'reason': 'This round was decided before shadow batches were recorded. A random '
+                          'draw made now would not be the one that was available then, so none '
+                          'is reported.'}
+    sign = 1.0 if declaration(state)['direction'] == 'higher_is_better' else -1.0
+    batch = [row['compound_id'] for row in round_record['recommendations']]
+    shared = sorted(set(logged['ids']) & set(batch))
+    known = {cid: state['compounds'][cid]['value'] for cid in logged['ids']
+             if state['compounds'][cid]['status'] == 'measured'}
+    entry = {'logged': True, 'policy': logged['policy'], 'size': len(logged['ids']),
+             'matches_committed_batch_size': len(logged['ids']) == len(batch),
+             'shared_with_committed_batch': len(shared),
+             'shared_locked': len(set(shared) & set(logged['locked'])),
+             'chance_of_each_unlocked_candidate': logged['propensity_unlocked'],
+             'assayed': logged['assayed'], 'shadow_members_measured': len(known)}
+    batch_values = [round_record['results'][cid]['value'] for cid in batch
+                    if round_record['results'].get(cid, {}).get('status') == 'measured']
+    if len(known) < len(logged['ids']) or len(batch_values) < len(batch):
+        missing = len(logged['ids']) - len(known)
+        return {**entry, 'comparison': None,
+                'reason': f'{missing} of {len(logged["ids"])} shadow compounds have no measurement'
+                          + ('' if len(batch_values) == len(batch)
+                             else ', and the committed batch is not fully measured')
+                          + '. Comparing a partial shadow batch would compare against the '
+                            'compounds the policy chose to measure, not against a random draw.'}
+    best = max if sign > 0 else min
+    shadow_values = list(known.values())
+    return {**entry, 'comparison': {
+                'batch_best': best(batch_values), 'shadow_best': best(shadow_values),
+                'batch_mean': float(np.mean(batch_values)), 'shadow_mean': float(np.mean(shadow_values)),
+                'batch_better_on_best': bool(sign * (best(batch_values) - best(shadow_values)) > 0),
+                'note': 'One round, one random draw. A single comparison is an anecdote; '
+                        'only many rounds together say whether the policy beats random.'},
+            'reason': 'Every shadow compound has a measurement, so the two batches can be compared.'}
 
 
 def record(path_or_state):
@@ -198,6 +249,7 @@ def review(path_or_state):
             'best_measured_this_round': (max(observed) if sign > 0 else min(observed)) if observed else None,
             'best_value_known_before': picks[0]['why']['best_value_known_then'] if picks else None,
             'off_policy': off_policy(round_record),
+            'shadow': shadow(state, round_record),
         })
     measured = [entry for entry in entries if entry['outcome']['status'] == 'measured']
     errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured])
@@ -211,7 +263,10 @@ def review(path_or_state):
                    'awaiting_result': sum(entry['verdict'] == PENDING for entry in entries),
                    'rounds_usable_for_off_policy_evaluation': sum(
                        round_entry['off_policy']['usable_for_off_policy_evaluation']
-                       for round_entry in rounds)},
+                       for round_entry in rounds),
+                   'rounds_with_shadow_batch': sum(round_entry['shadow']['logged'] for round_entry in rounds),
+                   'shadow_batches_comparable': sum(round_entry['shadow']['comparison'] is not None
+                                                    for round_entry in rounds)},
         'limitations': [
             'Only picks have outcomes. Rejected candidates were never measured, so this cannot '
             'say whether a different batch would have been better.',
@@ -222,6 +277,10 @@ def review(path_or_state):
             'Selection propensities are stored per candidate, but under the greedy policy they '
             'are all 1 or 0, so they show which candidates the policy ruled out completely; '
             'they do not by themselves allow an estimate of what another policy would have found.',
+            'Each round records a matched random shadow batch, but it is never assayed. It can be '
+            'compared with the real batch only once every shadow compound has a measurement, '
+            'which in a live campaign normally means never; in a retrospective replay with known '
+            'outcomes it means every round.',
         ],
     }
 
