@@ -140,6 +140,12 @@ def test_manual_selection_is_committed_exactly_and_replayed(client):
     assert stored['propensity_logged'] and stored['batch_followed_policy'] is False
     assert stored['usable_for_off_policy_evaluation'] is False
     assert {c['compound_id'] for c in state['compounds'] if c['status'] == 'pending'} == set(selected)
+    # The shadow drawn with the preview is kept as drawn, at the proposed size of three,
+    # and the campaign view the dashboard reads does not show it as part of the batch.
+    assert 'shadow' not in record
+    shadow = client.get(f'/campaigns/{cid}/decisions/review').json()['rounds'][0]['shadow']
+    assert shadow['logged'] and shadow['size'] == 3 and shadow['assayed'] is False
+    assert shadow['matches_committed_batch_size'] is False
     assert client.post(f'/campaigns/{cid}/commit', json=body).json()['already_committed']
     assert client.post(f'/campaigns/{cid}/commit', json={**body, 'selected_ids':selected[::-1]}).status_code == 409
     assert client.post(f'/campaigns/{cid}/rounds/1/demo-results', json={}).json()['added'] == 2
