@@ -146,6 +146,13 @@ def test_manual_selection_is_committed_exactly_and_replayed(client):
     shadow = client.get(f'/campaigns/{cid}/decisions/review').json()['rounds'][0]['shadow']
     assert shadow['logged'] and shadow['size'] == 3 and shadow['assayed'] is False
     assert shadow['matches_committed_batch_size'] is False
+    # A hand-picked compound keeps the round's interval, rebuilt from the centre the
+    # slate stored for it rather than being dropped or recomputed now.
+    widths = [r['interval']['high'] - r['interval']['low'] for r in record['recommendations']]
+    assert all(width == pytest.approx(widths[0]) and width > 0 for width in widths)
+    picked = next(r for r in record['recommendations'] if r['compound_id'] == alternate)
+    assert picked['interval']['low'] < picked['interval']['center'] < picked['interval']['high']
+    assert picked['interval']['center'] != record['recommendations'][0]['interval']['center']
     assert client.post(f'/campaigns/{cid}/commit', json=body).json()['already_committed']
     assert client.post(f'/campaigns/{cid}/commit', json={**body, 'selected_ids':selected[::-1]}).status_code == 409
     assert client.post(f'/campaigns/{cid}/rounds/1/demo-results', json={}).json()['added'] == 2

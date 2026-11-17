@@ -283,8 +283,12 @@ def propose(path, batch_size=8):
         selected = locked + ranked[:batch_size-len(locked)]
         propensity = greedy_propensity(ranked, locked, batch_size)
         # The full ranked slate records what was considered and rejected, not only the picks.
+        # The slate keeps each candidate's interval centre, not the whole interval: the
+        # half-width is one number for the round, and a person who overrides the picks at
+        # commit time needs the centre of whatever they chose instead.
         slate = [{'rank': rank, 'compound_id': cid, 'prediction': predictions[by_id[cid]],
-                  'selected': cid in selected, 'propensity': propensity[cid]}
+                  'selected': cid in selected, 'propensity': propensity[cid],
+                  'interval_center': centers[by_id[cid]] if centers else None}
                  for rank, cid in enumerate(sorted(pool, key=lambda c: (-sign * predictions[by_id[c]], c)), 1)]
         rows = []
         for rank, cid in enumerate(selected, 1):

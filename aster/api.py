@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from rdkit import Chem
 from rdkit.Chem import Draw, Descriptors, Crippen, rdMolDescriptors
 
-from . import campaign
+from . import campaign, conformal
 from .acquisition import nearest_measured
 from .data import fingerprints
 
@@ -414,10 +414,16 @@ def create_app(storage=None):
                 if len(selected) > len(record['recommendations']) or not locked <= set(selected):
                     raise ValueError('Respect the preview batch size and include all locked compounds.')
                 scores = {r['compound_id']: r for r in preview['scored']}
+                # Carry the round's interval onto a hand-picked compound, from the centre the
+                # slate stored for it. A compound with no stored centre gets no interval.
+                half_width = (record.get('uncertainty') or {}).get('half_width')
+                centers = {row['compound_id']: row.get('interval_center') for row in record['slate']}
                 record['recommendations'] = [
                     {**scores[c], 'rank': rank, 'smiles': state['compounds'][c]['smiles'],
                      'selection_reason': 'user_locked' if c in locked else 'user_selected',
-                     'outside_diagnostic_range': not 0 <= scores[c]['prediction'] <= 14}
+                     'outside_diagnostic_range': not 0 <= scores[c]['prediction'] <= 14,
+                     'interval': (conformal.interval(centers[c], half_width)
+                                  if centers.get(c) is not None else None)}
                     for rank, c in enumerate(selected, 1)]
                 # The slate keeps the policy's propensities; say whether the batch obeyed them.
                 if 'propensity' in record:
