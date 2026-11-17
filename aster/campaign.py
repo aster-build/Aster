@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import conformal
 from .acquisition import nearest_measured
 from .data import canonicalize, fingerprints
 from .heads import StableRidge
@@ -171,6 +172,71 @@ def constrain(path, ids, mode):
         event(state, 'constraints', {'ids': ids, 'mode': mode})
 
 
+def greedy_propensity(ranked, locked, batch_size):
+    """Probability that the greedy policy would select each eligible candidate.
+
+    Written into the slate when the batch is decided, because it cannot be rebuilt
+    later: a future analysis that asks "what would a different policy have found?"
+    has to reweight each measured pick by how likely the policy in force was to pick
+    it. Greedy selection with a fixed tie-break is deterministic, so every value is
+    exactly 1.0 or 0.0. Locked compounds are 1.0 because the user forced them in.
+    Excluded compounds never reach the slate; their propensity is 0.0 by construction.
+    """
+    chosen = set(locked) | set(ranked[:batch_size-len(locked)])
+    return {cid: 1.0 if cid in chosen else 0.0 for cid in list(locked) + list(ranked)}
+
+
+def propensity_summary(propensity, followed=True):
+    """Round-level statement of what the stored propensities can and cannot support."""
+    values = list(propensity.values())
+    return {'of': 'the policy in force, computed when the batch was decided',
+            'deterministic': all(value in (0.0, 1.0) for value in values),
+            'nonzero': sum(value > 0 for value in values),
+            'candidates': len(values),
+            # False when a person replaced the policy's picks at commit time. The stored
+            # propensities still describe the policy, but the batch was chosen by a person
+            # whose probabilities nobody recorded.
+            'batch_followed_policy': followed}
+
+
+def shadow_seed(training_sha256, eligible_ids, round_number):
+    """Seed for the shadow draw, fixed by what the round was decided from.
+
+    It depends on the training snapshot, the eligible pool and the round number only,
+    never on predictions, so the draw cannot lean toward compounds the model likes, and
+    re-proposing the same round reproduces the same shadow batch.
+    """
+    basis = encoded({'training_sha256': training_sha256, 'eligible_ids': sorted(eligible_ids),
+                     'round': round_number})
+    return int(hashlib.sha256(basis.encode()).hexdigest()[:16], 16)
+
+
+def shadow_batch(pool, locked, batch_size, seed):
+    """A matched random batch: recorded with every committed batch, never assayed.
+
+    Same size and same constraints as the real batch (locked compounds in, excluded
+    ones out), with the free slots filled uniformly at random from the rest of the same
+    eligible pool. The policy's own picks stay in the draw, so the two batches can
+    overlap; leaving them out would make the shadow a sample of "what greedy rejected"
+    rather than of a random policy. Every unlocked candidate has the same chance of
+    being drawn, which is stored as the shadow policy's propensity.
+    """
+    locked_set = set(locked)
+    free = sorted(cid for cid in pool if cid not in locked_set)
+    slots = batch_size - len(locked)
+    order = np.random.default_rng(seed).permutation(len(free))
+    drawn = [free[i] for i in order[:slots]]
+    return {'policy': 'random',
+            'rule': 'same size and constraints as the batch; free slots drawn uniformly '
+                    'at random from the same eligible pool',
+            'ids': list(locked) + drawn, 'size': batch_size, 'locked': list(locked),
+            'pool_size': len(pool), 'seed': seed,
+            'seed_basis': 'sha256 of the training snapshot hash, the eligible ids and the round number',
+            'propensity_unlocked': slots / len(free) if free else 0.0,
+            'propensity_locked': 1.0,
+            'assayed': False}
+
+
 def propose(path, batch_size=8):
     if not isinstance(batch_size, int) or isinstance(batch_size, bool) or batch_size < 1:
         raise ValueError('Batch size must be a positive integer')
@@ -188,12 +254,21 @@ def propose(path, batch_size=8):
         x = fingerprints([compounds[c]['smiles'] for c in observed])
         y = np.asarray([compounds[c]['value'] for c in observed])
         model = StableRidge('standard', 10).fit(x, y)
+        snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
+        training_sha256 = hashlib.sha256(encoded(snapshot).encode()).hexdigest()
+        # A second model, fitted without the calibration half, supplies the interval.
+        # Ranking still uses the full-data model above, so adding intervals changes no pick.
+        calibration_model, uncertainty = conformal.calibrate(
+            x, y, seed=conformal.seed_from(training_sha256),
+            recipe={'mode': RECIPE['scaling'], 'alpha': RECIPE['alpha']})
         # Chunk scoring and nearest-neighbour evidence to bound similarity matrix size.
-        predictions, neighbours, similarities = [], [], []
+        predictions, centers, neighbours, similarities = [], [], [], []
         for start in range(0, len(pool), 256):
             chunk = pool[start:start+256]
             features = fingerprints([compounds[c]['smiles'] for c in chunk])
             predictions.extend(model.predict(features).tolist())
+            if calibration_model is not None:
+                centers.extend(calibration_model.predict(features).tolist())
             nearest, novelty = nearest_measured(features, x)
             neighbours.extend([observed[i] for i in nearest])
             similarities.extend((1-novelty).tolist())
@@ -206,9 +281,14 @@ def propose(path, batch_size=8):
         margin = EXTRAPOLATION_MARGIN * float(np.std(y)) if len(y) > 1 else 0.0
         low, high = float(y.min()) - margin, float(y.max()) + margin
         selected = locked + ranked[:batch_size-len(locked)]
+        propensity = greedy_propensity(ranked, locked, batch_size)
         # The full ranked slate records what was considered and rejected, not only the picks.
+        # The slate keeps each candidate's interval centre, not the whole interval: the
+        # half-width is one number for the round, and a person who overrides the picks at
+        # commit time needs the centre of whatever they chose instead.
         slate = [{'rank': rank, 'compound_id': cid, 'prediction': predictions[by_id[cid]],
-                  'selected': cid in selected}
+                  'selected': cid in selected, 'propensity': propensity[cid],
+                  'interval_center': centers[by_id[cid]] if centers else None}
                  for rank, cid in enumerate(sorted(pool, key=lambda c: (-sign * predictions[by_id[c]], c)), 1)]
         rows = []
         for rank, cid in enumerate(selected, 1):
@@ -218,13 +298,29 @@ def propose(path, batch_size=8):
                          'prediction': predictions[i], 'selection_reason': 'user_locked' if cid in locked else 'best_prediction',
                          'nearest_measured_id': neighbour, 'nearest_measured_value': compounds[neighbour]['value'],
                          'similarity': similarities[i],
-                         'outside_diagnostic_range': not low <= predictions[i] <= high})
+                         'outside_diagnostic_range': not low <= predictions[i] <= high,
+                         # None when the measured set was too small to calibrate an interval.
+                         'interval': (conformal.interval(centers[i], uncertainty['half_width'])
+                                      if centers else None)})
+        if centers:
+            # How far the interval's centre sits from the number that did the ranking.
+            drift = [abs(centers[by_id[cid]] - predictions[by_id[cid]]) for cid in selected]
+            uncertainty = {**uncertainty, 'centered_on': 'the calibration-split model, not the '
+                                                         'full-data model used for ranking',
+                           'mean_center_offset_from_ranking_prediction': float(np.mean(drift))}
         coef, intercept = model.linear_coefficients()
-        snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
-        round_record = {'round': len(state['rounds']) + 1, 'created_at': stamp(), 'status': 'pending',
-                        'training': snapshot, 'training_sha256': hashlib.sha256(encoded(snapshot).encode()).hexdigest(),
+        number = len(state['rounds']) + 1
+        shadow = shadow_batch(pool, locked, batch_size, shadow_seed(training_sha256, pool, number))
+        round_record = {'round': number, 'created_at': stamp(), 'status': 'pending',
+                        'training': snapshot, 'training_sha256': training_sha256,
                         'eligible_ids': pool, 'constraints': {cid: compounds[cid]['constraint'] for cid in pool},
-                        'recommendations': rows, 'slate': slate, 'results': {}, 'recipe': state['recipe'],
+                        'recommendations': rows, 'slate': slate, 'propensity': propensity_summary(propensity),
+                        # The interval each pick carries, and what it rests on.
+                        'uncertainty': uncertainty,
+                        # Recorded for later comparison only. Shadow compounds are never marked
+                        # pending, exported or sent to the assay.
+                        'shadow': shadow,
+                        'results': {}, 'recipe': state['recipe'],
                         'policy': {'id': state['recipe']['policy'], 'rule': 'rank by predicted value in the declared direction',
                                    'locked': locked, 'excluded': sorted(cid for cid, c in compounds.items()
                                                                         if c['constraint'] == 'excluded')},
@@ -234,7 +330,8 @@ def propose(path, batch_size=8):
                         'model': {'coefficients': coef.tolist(), 'intercept': intercept},
                         'versions': {p: importlib.metadata.version(p) for p in ('rdkit', 'numpy', 'scikit-learn')},
                         'source_sha256': {p: hashlib.sha256(Path(__file__).with_name(p).read_bytes()).hexdigest()
-                                          for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py')}}
+                                          for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py',
+                                                    'conformal.py')}}
         for cid in selected:
             compounds[cid]['status'] = 'pending'
         state['rounds'].append(round_record)
