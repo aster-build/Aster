@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import conformal
 from .campaign import declaration, load
 
 PENDING = 'awaiting_result'
@@ -54,6 +55,10 @@ def decision(state, record, pick):
             # None means the round predates shadow batches; never back-filled.
             'also_in_shadow_batch': (pick['compound_id'] in record['shadow']['ids']
                                      if 'shadow' in record else None),
+            # None means the round predates intervals, or the measured set was too small
+            # to calibrate one; never back-filled, because a width computed now would come
+            # from measurements the decision did not have.
+            'interval': pick.get('interval'),
             'nearest_measured_id': pick['nearest_measured_id'],
             'nearest_measured_value': pick['nearest_measured_value'],
             'similarity_to_nearest_measured': pick['similarity'],
@@ -82,6 +87,9 @@ def decision(state, record, pick):
     entry['outcome'] = {'status': 'measured', 'value': observed,
                         'prediction_error': observed - pick['prediction'],
                         'absolute_error': abs(observed - pick['prediction']),
+                        # None when this pick carries no interval. One pick landing inside
+                        # or outside says nothing on its own; the rate over many does.
+                        'inside_interval': conformal.covers(pick.get('interval'), observed),
                         'improved_on_best_known': bool(sign * (observed - known) > 0)}
     entry['verdict'] = ('improved_on_what_was_known' if entry['outcome']['improved_on_best_known']
                         else 'did_not_improve_on_what_was_known')
@@ -168,6 +176,39 @@ def shadow(state, round_record):
             'reason': 'Every shadow compound has a measurement, so the two batches can be compared.'}
 
 
+def uncertainty(round_record, picks):
+    """What interval the round recorded, and how often the measurements landed in it.
+
+    The observed rate is reported beside the nominal one deliberately. The nominal level
+    assumes the predicted compound is exchangeable with the calibration compounds, and a
+    batch chosen because the model scored it highly is not, so the two numbers are
+    expected to differ. A round holds at most a batch of measurements, which is far too
+    few to judge coverage from; the per-round figure is a tally, and only the campaign
+    total, or `scripts/conformal_coverage.py`, carries any weight.
+    """
+    logged = round_record.get('uncertainty')
+    if logged is None or logged.get('half_width') is None:
+        return {'interval_logged': False, 'nominal_coverage': None,
+                'reason': (logged or {}).get('reason',
+                           'This round was decided before intervals were recorded. A width '
+                           'computed now would use measurements the decision did not have, '
+                           'so none is reported.')}
+    measured = [entry for entry in picks if entry['outcome']['status'] == 'measured']
+    observed = conformal.coverage([(entry['why']['interval'], entry['outcome']['value'])
+                                   for entry in measured])
+    return {'interval_logged': True, 'method': logged['method'],
+            'nominal_coverage': logged['nominal_coverage'],
+            'half_width': logged['half_width'],
+            'calibration_size': logged['calibration_size'],
+            'quantile_rank': logged['quantile_rank'],
+            'picks_inside_interval': observed['covered'],
+            'picks_measured': observed['measurements'],
+            'observed_coverage_this_round': observed['observed_coverage'],
+            'assumption': logged['assumption'],
+            'reason': 'A batch of measurements cannot measure a coverage rate. Read the '
+                      'campaign total, and the selected-batch coverage study, instead.'}
+
+
 def record(path_or_state):
     """Every decision this campaign has made, oldest first."""
     state = path_or_state if isinstance(path_or_state, dict) else load(path_or_state)
@@ -209,6 +250,11 @@ def sentence(state, entry):
                 f"{entry['why']['nearest_measured_value']:.2f}{unit} "
                 f"(Tanimoto similarity {entry['why']['similarity_to_nearest_measured']:.2f}), and the best "
                 f"measurement known at the time was {entry['why']['best_value_known_then']:.2f}{unit}.")
+    span = entry['why'].get('interval')
+    if span and span['half_width'] is not None:
+        why_text += (f" The interval recorded with it ran {span['low']:.2f} to {span['high']:.2f}{unit}, "
+                     f"which is where a measurement was expected to land about nine times in ten "
+                     f"if this compound behaved like the ones the interval was calibrated on.")
     outcome = entry['outcome']
     if outcome['status'] == 'measured':
         sign = 1.0 if endpoint['direction'] == 'higher_is_better' else -1.0
@@ -248,6 +294,7 @@ def review(path_or_state):
             'within_batch_rank_agreement': agreement(predicted, observed),
             'best_measured_this_round': (max(observed) if sign > 0 else min(observed)) if observed else None,
             'best_value_known_before': picks[0]['why']['best_value_known_then'] if picks else None,
+            'uncertainty': uncertainty(round_record, picks),
             'off_policy': off_policy(round_record),
             'shadow': shadow(state, round_record),
         })
@@ -264,6 +311,8 @@ def review(path_or_state):
                    'rounds_usable_for_off_policy_evaluation': sum(
                        round_entry['off_policy']['usable_for_off_policy_evaluation']
                        for round_entry in rounds),
+                   'interval_coverage': conformal.coverage(
+                       [(entry['why']['interval'], entry['outcome']['value']) for entry in measured]),
                    'rounds_with_shadow_batch': sum(round_entry['shadow']['logged'] for round_entry in rounds),
                    'shadow_batches_comparable': sum(round_entry['shadow']['comparison'] is not None
                                                     for round_entry in rounds)},
@@ -277,6 +326,11 @@ def review(path_or_state):
             'Selection propensities are stored per candidate, but under the greedy policy they '
             'are all 1 or 0, so they show which candidates the policy ruled out completely; '
             'they do not by themselves allow an estimate of what another policy would have found.',
+            'Each pick carries a 90% split conformal interval, which is a nominal level and '
+            'not a guarantee: it assumes the compound predicted is exchangeable with the '
+            'compounds the interval was calibrated on, and a batch chosen because the model '
+            'scored it highly is not. The observed coverage reported here is over selected '
+            'picks only, which is exactly the case where the level can fail.',
             'Each round records a matched random shadow batch, but it is never assayed. It can be '
             'compared with the real batch only once every shadow compound has a measurement, '
             'which in a live campaign normally means never; in a retrospective replay with known '

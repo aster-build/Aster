@@ -270,3 +270,49 @@ def test_rounds_from_before_shadow_batches_are_not_back_filled(tmp_path, inputs)
     shadow = review(path)['rounds'][0]['shadow']
     assert shadow['logged'] is False and shadow['comparison'] is None
     assert 'before shadow batches' in shadow['reason']
+
+
+def test_each_decision_carries_its_interval_and_whether_the_result_landed_in_it(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    first = propose(path)
+    picks = first['recommendations']
+    half = first['uncertainty']['half_width']
+    # One pick measured inside its interval, one far outside it.
+    inside = picks[0]['interval']['center']
+    outside = picks[1]['interval']['center'] + 10 * half + 1
+    import_results(path, 1, csv_file(tmp_path/'r1.csv', ['compound_id', 'status', 'value'],
+                                     [{'compound_id': picks[0]['compound_id'], 'status': 'measured',
+                                       'value': str(inside)},
+                                      {'compound_id': picks[1]['compound_id'], 'status': 'measured',
+                                       'value': str(outside)}]))
+    entries = {entry['compound_id']: entry for entry in record(path)}
+    first_entry = entries[picks[0]['compound_id']]
+    assert first_entry['why']['interval']['half_width'] == half
+    assert first_entry['outcome']['inside_interval'] is True
+    assert entries[picks[1]['compound_id']]['outcome']['inside_interval'] is False
+    assert entries[picks[2]['compound_id']]['outcome']['status'] == 'awaiting_result'
+    explanation = why(path, picks[0]['compound_id'])['explanation']
+    assert 'nine times in ten' in explanation
+
+    reported = review(path)
+    round_one = reported['rounds'][0]['uncertainty']
+    assert round_one['interval_logged'] and round_one['nominal_coverage'] == 0.9
+    assert (round_one['picks_measured'], round_one['picks_inside_interval']) == (2, 1)
+    assert round_one['observed_coverage_this_round'] == 0.5
+    assert 'cannot measure a coverage rate' in round_one['reason']
+    assert reported['totals']['interval_coverage'] == {'measurements': 2, 'covered': 1,
+                                                       'observed_coverage': 0.5}
+    assert any('nominal level' in line for line in reported['limitations'])
+
+
+def test_a_round_decided_before_intervals_existed_reports_none(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    state = load(path)
+    for pick in state['rounds'][0]['recommendations']:
+        pick.pop('interval')
+    state['rounds'][0].pop('uncertainty')
+    reported = review(state)['rounds'][0]['uncertainty']
+    assert reported['interval_logged'] is False and reported['nominal_coverage'] is None
+    assert 'did not have' in reported['reason']
+    assert record(state)[0]['why']['interval'] is None
