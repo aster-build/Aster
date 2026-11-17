@@ -102,9 +102,18 @@ reads the queue, it does not plan.
   assayed, so it does not make off-policy evaluation possible on its own; see
   `docs/DECISION_RECORD.md`.
 
-- [ ] **7. Replace the bare point estimate with a split conformal interval.**
+- [x] **7. Replace the bare point estimate with a split conformal interval.**
   State the coverage level, and say in the record that coverage assumptions can
   fail under adaptive selection rather than promising distribution-free coverage.
+  Done. `aster/conformal.py` adds a 90% nominal split conformal interval to every
+  pick and every slate row; ranking is unchanged. Rather than only warning about
+  adaptive selection, `scripts/conformal_coverage.py` measured it over 100
+  replays: selected picks were covered 92.7% of the time against a nominal 90%
+  and 89.1% for a matched random draw, so the violation ran in the model's favour
+  on that dataset. The interval is also barely narrower than the same recipe
+  around a model that predicts the training average (1.77 against 1.81 pKi), so
+  it is honest and close to uninformative at this amount of data. Written up in
+  `docs/CONFORMAL.md`.
 
 - [ ] **8. Store censored measurements as {relation, value, unit}.** So that
   "> 10 µM" can be recorded faithfully instead of rejected, and propagates into

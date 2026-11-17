@@ -62,6 +62,11 @@ the recipe, library versions and module hashes. Two additions complete the recor
   "it was committed"; the committed batch is `recommendations`.
 - **`shadow`** — a matched random batch, drawn when the batch is decided and never
   assayed. See below.
+- **`interval`** on every recommendation and **`uncertainty`** on the round — a 90%
+  split conformal interval around each pick, and what that interval rests on. Each slate
+  row carries the `interval_center` it would have had, so a compound picked by hand in
+  the dashboard keeps an interval too. [Prediction intervals](CONFORMAL.md) has the
+  method and the measured coverage.
 
 ## Selection propensity, and what it cannot do yet
 
@@ -192,14 +197,38 @@ over-read:
    is a campaign milestone, not a biological or clinical claim.
 4. **The shadow batch is never assayed.** It is compared with the real batch only when
    every shadow compound has a measurement.
+5. **The interval's level is nominal.** Coverage is reported over selected picks, which
+   is exactly the case where the conformal assumption does not hold, and a single round
+   has too few measurements to measure a rate at all.
+
+## The prediction interval, and what it is worth
+
+Each pick records an interval as well as a number: its prediction plus and minus a
+half-width taken from how wrong the model was on a held-out half of the measured set
+([method and numbers](CONFORMAL.md)). The level is 90% **nominal**. The record never
+calls it a guarantee, because the guarantee assumes the compound predicted is
+exchangeable with the compounds the interval was calibrated on, and a batch chosen
+because the model scored it highly is not.
+
+Rather than assert that caveat, Aster measured it: over 100 replays on the public
+example, selected picks were covered 92.7% of the time against 89.1% for a random draw
+from the same pool, so on that data the violation ran in the model's favour. The same
+study found the interval barely narrower than the identical recipe around a model that
+just predicts the training average, 1.77 against 1.81 pKi. Both numbers are reported in
+`review`, alongside the observed coverage over the campaign's own measured picks.
+
+Ranking is untouched by all of this: the picks still come from the full-data model, so
+every earlier milestone stays comparable, and the interval is centred on the
+calibration-split model with the round recording how far apart the two centres sat.
 
 ## What this deliberately does not do
 
 - It does not put evidence into the ranking. [Milestone 9](EVIDENCE_SELECTION.md) tested
   that and the gate failed, so evidence stays attached to a decision for a human to
   read.
-- It does not express confidence. Similarity and the extrapolation flag are shown;
-  neither is a calibrated interval.
+- It does not express confidence as a single score. The interval is calibrated against
+  held-out error and reported with its nominal level and its assumption; similarity and
+  the extrapolation flag remain diagnostics, not probabilities.
 - It does not record censored values such as "greater than 10 µM". The workflow still
   requires exact numbers, so a campaign whose assay reports limits cannot be recorded
   faithfully yet. That is the next real gap in the data model.
