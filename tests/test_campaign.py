@@ -6,6 +6,7 @@ import pytest
 
 from aster.campaign import (constrain, create, export_batch, greedy_propensity, import_results,
                             load, propose, shadow_batch, shadow_seed, summary)
+from aster.conformal import seed_from
 from aster.data import fingerprints
 
 
@@ -257,3 +258,32 @@ def test_shadow_does_not_depend_on_candidate_file_order(campaign, inputs, tmp_pa
     other = tmp_path/'other.sqlite'
     create(other, inputs[0], reordered, name='Test', assay='assay-1', endpoint='pKi')
     assert propose(campaign)['shadow']['ids'] == propose(other)['shadow']['ids']
+
+
+def test_every_pick_carries_a_conformal_interval_that_the_round_explains(campaign):
+    first = propose(campaign)
+    uncertainty = first['uncertainty']
+    assert uncertainty['method'] == 'split conformal on absolute residuals'
+    assert uncertainty['nominal_coverage'] == 0.9
+    assert uncertainty['fit_size'] + uncertainty['calibration_size'] == len(first['training']) == 32
+    assert uncertainty['half_width'] > 0
+    assert 'exchangeable' in uncertainty['assumption']
+    assert uncertainty['seed'] == seed_from(first['training_sha256'])
+    for row in first['recommendations']:
+        entry = row['interval']
+        assert entry['high'] - entry['low'] == pytest.approx(2 * uncertainty['half_width'])
+        assert entry['low'] < entry['center'] < entry['high']
+    assert load(campaign)['rounds'][0]['uncertainty'] == uncertainty
+
+
+def test_intervals_do_not_change_which_compounds_are_picked(campaign, inputs, tmp_path, monkeypatch):
+    with_intervals = propose(campaign)
+    other = tmp_path/'nointervals.sqlite'
+    create(other, *inputs, name='Test', assay='assay-1', endpoint='pKi')
+    # Stand in for a measured set too small to calibrate: no interval, same decisions.
+    monkeypatch.setattr('aster.conformal.calibrate', lambda *a, **k: (None, {'half_width': None}))
+    without = propose(other)
+    assert ([(r['compound_id'], r['prediction']) for r in without['recommendations']]
+            == [(r['compound_id'], r['prediction']) for r in with_intervals['recommendations']])
+    assert all(row['interval'] is None for row in without['recommendations'])
+    assert without['uncertainty']['half_width'] is None

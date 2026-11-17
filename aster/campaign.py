@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import conformal
 from .acquisition import nearest_measured
 from .data import canonicalize, fingerprints
 from .heads import StableRidge
@@ -253,12 +254,21 @@ def propose(path, batch_size=8):
         x = fingerprints([compounds[c]['smiles'] for c in observed])
         y = np.asarray([compounds[c]['value'] for c in observed])
         model = StableRidge('standard', 10).fit(x, y)
+        snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
+        training_sha256 = hashlib.sha256(encoded(snapshot).encode()).hexdigest()
+        # A second model, fitted without the calibration half, supplies the interval.
+        # Ranking still uses the full-data model above, so adding intervals changes no pick.
+        calibration_model, uncertainty = conformal.calibrate(
+            x, y, seed=conformal.seed_from(training_sha256),
+            recipe={'mode': RECIPE['scaling'], 'alpha': RECIPE['alpha']})
         # Chunk scoring and nearest-neighbour evidence to bound similarity matrix size.
-        predictions, neighbours, similarities = [], [], []
+        predictions, centers, neighbours, similarities = [], [], [], []
         for start in range(0, len(pool), 256):
             chunk = pool[start:start+256]
             features = fingerprints([compounds[c]['smiles'] for c in chunk])
             predictions.extend(model.predict(features).tolist())
+            if calibration_model is not None:
+                centers.extend(calibration_model.predict(features).tolist())
             nearest, novelty = nearest_measured(features, x)
             neighbours.extend([observed[i] for i in nearest])
             similarities.extend((1-novelty).tolist())
@@ -284,16 +294,25 @@ def propose(path, batch_size=8):
                          'prediction': predictions[i], 'selection_reason': 'user_locked' if cid in locked else 'best_prediction',
                          'nearest_measured_id': neighbour, 'nearest_measured_value': compounds[neighbour]['value'],
                          'similarity': similarities[i],
-                         'outside_diagnostic_range': not low <= predictions[i] <= high})
+                         'outside_diagnostic_range': not low <= predictions[i] <= high,
+                         # None when the measured set was too small to calibrate an interval.
+                         'interval': (conformal.interval(centers[i], uncertainty['half_width'])
+                                      if centers else None)})
+        if centers:
+            # How far the interval's centre sits from the number that did the ranking.
+            drift = [abs(centers[by_id[cid]] - predictions[by_id[cid]]) for cid in selected]
+            uncertainty = {**uncertainty, 'centered_on': 'the calibration-split model, not the '
+                                                         'full-data model used for ranking',
+                           'mean_center_offset_from_ranking_prediction': float(np.mean(drift))}
         coef, intercept = model.linear_coefficients()
-        snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
-        training_sha256 = hashlib.sha256(encoded(snapshot).encode()).hexdigest()
         number = len(state['rounds']) + 1
         shadow = shadow_batch(pool, locked, batch_size, shadow_seed(training_sha256, pool, number))
         round_record = {'round': number, 'created_at': stamp(), 'status': 'pending',
                         'training': snapshot, 'training_sha256': training_sha256,
                         'eligible_ids': pool, 'constraints': {cid: compounds[cid]['constraint'] for cid in pool},
                         'recommendations': rows, 'slate': slate, 'propensity': propensity_summary(propensity),
+                        # The interval each pick carries, and what it rests on.
+                        'uncertainty': uncertainty,
                         # Recorded for later comparison only. Shadow compounds are never marked
                         # pending, exported or sent to the assay.
                         'shadow': shadow,
@@ -307,7 +326,8 @@ def propose(path, batch_size=8):
                         'model': {'coefficients': coef.tolist(), 'intercept': intercept},
                         'versions': {p: importlib.metadata.version(p) for p in ('rdkit', 'numpy', 'scikit-learn')},
                         'source_sha256': {p: hashlib.sha256(Path(__file__).with_name(p).read_bytes()).hexdigest()
-                                          for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py')}}
+                                          for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py',
+                                                    'conformal.py')}}
         for cid in selected:
             compounds[cid]['status'] = 'pending'
         state['rounds'].append(round_record)
