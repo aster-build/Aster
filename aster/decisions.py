@@ -13,19 +13,21 @@ from pathlib import Path
 
 import numpy as np
 
+from . import censored, conformal
 from .campaign import declaration, load
 
 PENDING = 'awaiting_result'
-
-
-def _numbers(record):
-    """Measurements known to the model when this round was proposed."""
-    return np.asarray([row['value'] for row in record['training']], dtype=float)
+UNDETERMINED = 'undetermined'
 
 
 def _best_known(record, sign):
-    values = _numbers(record)
-    return float(values.max()) if sign > 0 else float(values.min())
+    """The best measurement known when the round was proposed.
+
+    Returns the number, how to read it, and whether the measurements settle it. With a
+    bound among them it may not: if the best thing known is "> 10" on an endpoint where
+    larger is better, nothing later can be called an improvement on it with certainty.
+    """
+    return censored.best_known(record['training'], sign)
 
 
 def decision(state, record, pick):
@@ -48,12 +50,30 @@ def decision(state, record, pick):
             'candidates_considered': len(record.get('eligible_ids') or slate),
             'rank_in_slate': next((row['rank'] for row in slate
                                    if row['compound_id'] == pick['compound_id']), None),
+            # None means the round predates propensity logging; it is never back-filled.
+            'selection_propensity': next((row.get('propensity') for row in slate
+                                          if row['compound_id'] == pick['compound_id']), None),
+            # None means the round predates shadow batches; never back-filled.
+            'also_in_shadow_batch': (pick['compound_id'] in record['shadow']['ids']
+                                     if 'shadow' in record else None),
+            # None means the round predates intervals, or the measured set was too small
+            # to calibrate one; never back-filled, because a width computed now would come
+            # from measurements the decision did not have.
+            'interval': pick.get('interval'),
             'nearest_measured_id': pick['nearest_measured_id'],
             'nearest_measured_value': pick['nearest_measured_value'],
+            # '=' unless that neighbour's own measurement was a bound.
+            'nearest_measured_relation': pick.get('nearest_measured_relation') or censored.EXACT,
             'similarity_to_nearest_measured': pick['similarity'],
             'outside_diagnostic_range': pick['outside_diagnostic_range'],
-            'best_value_known_then': known,
+            'best_value_known_then': known['value'],
+            # How to read that number, and whether the measurements pin it down.
+            'best_value_known_then_relation': known['relation'],
+            'best_value_known_then_is_certain': known['certain'],
             'measurements_known_then': len(record['training']),
+            # Which of those measurements were bounds rather than numbers, and what the
+            # fit did with them. None for a round proposed before bounds were supported.
+            'censoring': record.get('censoring'),
         },
         'basis': {
             'training_sha256': record['training_sha256'],
@@ -73,13 +93,150 @@ def decision(state, record, pick):
         entry['verdict'] = 'no_result'
         return entry
     observed = float(result['value'])
-    entry['outcome'] = {'status': 'measured', 'value': observed,
-                        'prediction_error': observed - pick['prediction'],
-                        'absolute_error': abs(observed - pick['prediction']),
-                        'improved_on_best_known': bool(sign * (observed - known) > 0)}
-    entry['verdict'] = ('improved_on_what_was_known' if entry['outcome']['improved_on_best_known']
+    relation = censored.relation_of(result)
+    # A measurement reported as a bound is not a number, so the distance from it to the
+    # prediction is not an error and is left out rather than computed from the bound.
+    exact = relation == censored.EXACT
+    improved = (censored.beats(relation, observed, known['relation'] or censored.EXACT,
+                               known['value'], sign)
+                if known['value'] is not None else None)
+    entry['outcome'] = {'status': 'measured', 'value': observed, 'relation': relation,
+                        'prediction_error': observed - pick['prediction'] if exact else None,
+                        'absolute_error': abs(observed - pick['prediction']) if exact else None,
+                        # None when this pick carries no interval, or the measurement is a
+                        # bound. One pick landing inside or outside says nothing on its own;
+                        # the rate over many does.
+                        'inside_interval': conformal.covers(pick.get('interval'), observed) if exact else None,
+                        # None when the bounds do not settle it, which is a real answer.
+                        'improved_on_best_known': improved,
+                        'error_reported': exact,
+                        'reason': None if exact else
+                                  'The assay reported a bound, so there is no prediction error to '
+                                  'report and the interval cannot be scored on this pick.'}
+    entry['verdict'] = ('improved_on_what_was_known' if improved
+                        else UNDETERMINED if improved is None
                         else 'did_not_improve_on_what_was_known')
     return entry
+
+
+def off_policy(round_record):
+    """Can this round support asking what a different selection policy would have found?
+
+    That analysis reweights each measured pick by one over the probability that the
+    policy in force would have picked it. It needs three things: the probability was
+    stored at decision time, the batch actually followed the policy, and the policy gave
+    passed-over candidates some chance. A greedy policy gives them none.
+    """
+    logged = round_record.get('propensity')
+    if logged is None:
+        return {'propensity_logged': False, 'deterministic': None, 'batch_followed_policy': None,
+                'usable_for_off_policy_evaluation': False,
+                'reason': 'This round was decided before selection propensities were recorded. '
+                          'They cannot be reconstructed afterwards, so none are reported.'}
+    entry = {'propensity_logged': True, 'deterministic': logged['deterministic'],
+             'batch_followed_policy': logged['batch_followed_policy'],
+             'candidates_with_nonzero_propensity': logged['nonzero'],
+             'candidates': logged['candidates']}
+    if not logged['batch_followed_policy']:
+        reason = ('A person replaced the policy\'s picks when committing this batch. The stored '
+                  'propensities describe the policy, not the person, so they cannot reweight '
+                  'what was measured.')
+    elif logged['deterministic']:
+        reason = ('The policy picked with certainty: every passed-over candidate had probability '
+                  'zero, so no reweighting can say how a different policy would have scored. '
+                  'That needs some randomness in what gets measured. A matched random shadow '
+                  'batch is recorded with rounds that have one, but it is never assayed, so it '
+                  'does not change this.')
+    else:
+        reason = 'Propensities were logged, the batch followed the policy, and it was not certain.'
+    usable = logged['batch_followed_policy'] and not logged['deterministic']
+    return {**entry, 'usable_for_off_policy_evaluation': usable, 'reason': reason}
+
+
+def shadow(state, round_record):
+    """What the round's matched random batch can report, judged from what is known now.
+
+    The shadow batch is never assayed. A shadow compound can still end up measured,
+    because the policy picked it in this round or a later one, but those measurements
+    are not a random sample: they exist because the policy wanted them. So a comparison
+    with the real batch is reported only when every shadow compound has a measurement.
+    """
+    logged = round_record.get('shadow')
+    if logged is None:
+        return {'logged': False, 'comparison': None,
+                'reason': 'This round was decided before shadow batches were recorded. A random '
+                          'draw made now would not be the one that was available then, so none '
+                          'is reported.'}
+    sign = 1.0 if declaration(state)['direction'] == 'higher_is_better' else -1.0
+    batch = [row['compound_id'] for row in round_record['recommendations']]
+    shared = sorted(set(logged['ids']) & set(batch))
+    # A bound is not usable here: the comparison is of best and mean values, and a bound
+    # has neither. A shadow batch holding one is reported as not comparable.
+    known = {cid: state['compounds'][cid]['value'] for cid in logged['ids']
+             if state['compounds'][cid]['status'] == 'measured'
+             and not censored.is_censored(state['compounds'][cid])}
+    entry = {'logged': True, 'policy': logged['policy'], 'size': len(logged['ids']),
+             'matches_committed_batch_size': len(logged['ids']) == len(batch),
+             'shared_with_committed_batch': len(shared),
+             'shared_locked': len(set(shared) & set(logged['locked'])),
+             'chance_of_each_unlocked_candidate': logged['propensity_unlocked'],
+             'assayed': logged['assayed'], 'shadow_members_measured': len(known)}
+    batch_values = [round_record['results'][cid]['value'] for cid in batch
+                    if round_record['results'].get(cid, {}).get('status') == 'measured'
+                    and not censored.is_censored(round_record['results'][cid])]
+    if len(known) < len(logged['ids']) or len(batch_values) < len(batch):
+        missing = len(logged['ids']) - len(known)
+        return {**entry, 'comparison': None,
+                'reason': f'{missing} of {len(logged["ids"])} shadow compounds have no exact measurement'
+                          + ('' if len(batch_values) == len(batch)
+                             else ', and the committed batch is not fully measured')
+                          + '. Comparing a partial shadow batch would compare against the '
+                            'compounds the policy chose to measure, not against a random draw.'}
+    best = max if sign > 0 else min
+    shadow_values = list(known.values())
+    return {**entry, 'comparison': {
+                'batch_best': best(batch_values), 'shadow_best': best(shadow_values),
+                'batch_mean': float(np.mean(batch_values)), 'shadow_mean': float(np.mean(shadow_values)),
+                'batch_better_on_best': bool(sign * (best(batch_values) - best(shadow_values)) > 0),
+                'note': 'One round, one random draw. A single comparison is an anecdote; '
+                        'only many rounds together say whether the policy beats random.'},
+            'reason': 'Every shadow compound has a measurement, so the two batches can be compared.'}
+
+
+def uncertainty(round_record, picks):
+    """What interval the round recorded, and how often the measurements landed in it.
+
+    The observed rate is reported beside the nominal one deliberately. The nominal level
+    assumes the predicted compound is exchangeable with the calibration compounds, and a
+    batch chosen because the model scored it highly is not, so the two numbers are
+    expected to differ. A round holds at most a batch of measurements, which is far too
+    few to judge coverage from; the per-round figure is a tally, and only the campaign
+    total, or `scripts/conformal_coverage.py`, carries any weight.
+    """
+    logged = round_record.get('uncertainty')
+    if logged is None or logged.get('half_width') is None:
+        return {'interval_logged': False, 'nominal_coverage': None,
+                'reason': (logged or {}).get('reason',
+                           'This round was decided before intervals were recorded. A width '
+                           'computed now would use measurements the decision did not have, '
+                           'so none is reported.')}
+    # Only exact measurements can be scored against an interval: a bound does not say
+    # where the value is, so it cannot say whether the interval contained it.
+    measured = [entry for entry in picks if entry['outcome']['status'] == 'measured'
+                and entry['outcome']['error_reported']]
+    observed = conformal.coverage([(entry['why']['interval'], entry['outcome']['value'])
+                                   for entry in measured])
+    return {'interval_logged': True, 'method': logged['method'],
+            'nominal_coverage': logged['nominal_coverage'],
+            'half_width': logged['half_width'],
+            'calibration_size': logged['calibration_size'],
+            'quantile_rank': logged['quantile_rank'],
+            'picks_inside_interval': observed['covered'],
+            'picks_measured': observed['measurements'],
+            'observed_coverage_this_round': observed['observed_coverage'],
+            'assumption': logged['assumption'],
+            'reason': 'A batch of measurements cannot measure a coverage rate. Read the '
+                      'campaign total, and the selected-batch coverage study, instead.'}
 
 
 def record(path_or_state):
@@ -120,17 +277,40 @@ def sentence(state, entry):
                 f"{entry['why']['candidates_considered']} eligible candidates, with a predicted "
                 f"{endpoint['endpoint']} of {entry['why']['prediction']:.2f}{unit}. Its nearest measured "
                 f"analog then was {entry['why']['nearest_measured_id']} at "
-                f"{entry['why']['nearest_measured_value']:.2f}{unit} "
-                f"(Tanimoto similarity {entry['why']['similarity_to_nearest_measured']:.2f}), and the best "
-                f"measurement known at the time was {entry['why']['best_value_known_then']:.2f}{unit}.")
+                + censored.text(entry['why']['nearest_measured_value'],
+                                entry['why'].get('nearest_measured_relation') or censored.EXACT,
+                                endpoint['unit'])
+                + f" (Tanimoto similarity {entry['why']['similarity_to_nearest_measured']:.2f}), and the best "
+                + 'measurement known at the time was '
+                + censored.text(entry['why']['best_value_known_then'],
+                                entry['why'].get('best_value_known_then_relation') or censored.EXACT,
+                                endpoint['unit'])
+                + ('.' if entry['why'].get('best_value_known_then_is_certain', True)
+                   else ', which is itself a bound, so the true best was somewhere past it.'))
+    span = entry['why'].get('interval')
+    if span and span['half_width'] is not None:
+        why_text += (f" The interval recorded with it ran {span['low']:.2f} to {span['high']:.2f}{unit}, "
+                     f"which is where a measurement was expected to land about nine times in ten "
+                     f"if this compound behaved like the ones the interval was calibrated on.")
     outcome = entry['outcome']
     if outcome['status'] == 'measured':
         sign = 1.0 if endpoint['direction'] == 'higher_is_better' else -1.0
-        direction = 'better' if sign * outcome['prediction_error'] > 0 else 'worse'
-        return (why_text + f" It measured {outcome['value']:.2f}{unit}, "
-                f"{abs(outcome['prediction_error']):.2f} {direction} than predicted, which "
-                + ('beat' if outcome['improved_on_best_known'] else 'did not beat')
-                + ' the best measurement known when it was chosen.')
+        reported = censored.text(outcome['value'], outcome.get('relation') or censored.EXACT, endpoint['unit'])
+        verdict = (' which beat' if outcome['improved_on_best_known']
+                   else ' and whether that beat' if outcome['improved_on_best_known'] is None
+                   else ' which did not beat')
+        tail = (' the best measurement known when it was chosen.'
+                if outcome['improved_on_best_known'] is not None
+                else ' the best measurement known when it was chosen cannot be told from bounds alone.')
+        if outcome['error_reported']:
+            direction = 'better' if sign * outcome['prediction_error'] > 0 else 'worse'
+            middle = (f" It measured {reported}, {abs(outcome['prediction_error']):.2f} "
+                      f"{direction} than predicted,")
+        else:
+            # The assay reported a bound, so there is no distance to the prediction to give.
+            middle = (f" It measured {reported}, which is a bound rather than a value, so there "
+                      f"is no prediction error to report,")
+        return why_text + middle + verdict + tail
     if outcome['status'] == 'failed':
         return why_text + ' The assay failed, so there is no result to judge the pick against.'
     return why_text + ' The result has not been imported yet.'
@@ -145,15 +325,22 @@ def review(path_or_state):
     for round_record in state['rounds']:
         picks = [entry for entry in entries if entry['round'] == round_record['round']]
         measured = [entry for entry in picks if entry['outcome']['status'] == 'measured']
-        errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured])
-        signed = np.asarray([entry['outcome']['prediction_error'] for entry in measured])
+        # Error, rank agreement and the best value of the round are computed on the exact
+        # measurements only. A bound has no distance to the prediction, and averaging it in
+        # as though it were a number is the mistake this release exists to stop.
+        scored = [entry for entry in measured if entry['outcome']['error_reported']]
+        errors = np.asarray([entry['outcome']['absolute_error'] for entry in scored])
+        signed = np.asarray([entry['outcome']['prediction_error'] for entry in scored])
         improved = [entry for entry in measured if entry['outcome']['improved_on_best_known']]
-        predicted = [entry['why']['prediction'] for entry in measured]
-        observed = [entry['outcome']['value'] for entry in measured]
+        predicted = [entry['why']['prediction'] for entry in scored]
+        observed = [entry['outcome']['value'] for entry in scored]
         rounds.append({
             'round': round_record['round'],
             'status': round_record['status'],
             'picks': len(picks), 'measured': len(measured),
+            'measured_exactly': len(scored),
+            'measured_as_a_bound': len(measured) - len(scored),
+            'improvement_undetermined': sum(entry['verdict'] == UNDETERMINED for entry in measured),
             'failed': sum(entry['outcome']['status'] == 'failed' for entry in picks),
             'awaiting_result': sum(entry['verdict'] == PENDING for entry in picks),
             'improved_on_best_known': len(improved),
@@ -162,24 +349,58 @@ def review(path_or_state):
             'within_batch_rank_agreement': agreement(predicted, observed),
             'best_measured_this_round': (max(observed) if sign > 0 else min(observed)) if observed else None,
             'best_value_known_before': picks[0]['why']['best_value_known_then'] if picks else None,
+            'uncertainty': uncertainty(round_record, picks),
+            'off_policy': off_policy(round_record),
+            'shadow': shadow(state, round_record),
         })
     measured = [entry for entry in entries if entry['outcome']['status'] == 'measured']
-    errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured])
+    errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured
+                         if entry['outcome']['error_reported']])
     return {
         'campaign': state['name'], 'assay': state['assay'], **declaration(state),
         'rounds': rounds,
         'totals': {'decisions': len(entries), 'measured': len(measured),
-                   'improved_on_best_known': sum(entry['outcome']['improved_on_best_known']
+                   'improved_on_best_known': sum(bool(entry['outcome']['improved_on_best_known'])
                                                  for entry in measured),
+                   'measured_as_a_bound': sum(not entry['outcome']['error_reported']
+                                              for entry in measured),
+                   'improvement_undetermined': sum(entry['verdict'] == UNDETERMINED
+                                                   for entry in entries),
                    'mean_absolute_error': float(errors.mean()) if len(errors) else None,
-                   'awaiting_result': sum(entry['verdict'] == PENDING for entry in entries)},
+                   'awaiting_result': sum(entry['verdict'] == PENDING for entry in entries),
+                   'rounds_usable_for_off_policy_evaluation': sum(
+                       round_entry['off_policy']['usable_for_off_policy_evaluation']
+                       for round_entry in rounds),
+                   'interval_coverage': conformal.coverage(
+                       [(entry['why']['interval'], entry['outcome']['value']) for entry in measured
+                        if entry['outcome']['error_reported']]),
+                   'rounds_with_shadow_batch': sum(round_entry['shadow']['logged'] for round_entry in rounds),
+                   'shadow_batches_comparable': sum(round_entry['shadow']['comparison'] is not None
+                                                    for round_entry in rounds)},
         'limitations': [
+            'A measurement reported as a bound, such as "> 10", is kept as a bound. It counts '
+            'as a measurement, but it supplies no prediction error, so it is left out of the '
+            'error figures, the rank agreement and the interval coverage rather than being '
+            'averaged in as though the bound were the value. Where bounds leave it genuinely '
+            'unknown whether a pick improved on what was known, the verdict says undetermined.',
             'Only picks have outcomes. Rejected candidates were never measured, so this cannot '
             'say whether a different batch would have been better.',
             'Prediction error is measured against the model as it stood in that round, not '
             'against the current model.',
             'Improvement is relative to the best measurement known when the pick was made, '
             'which is a campaign milestone, not a biological claim.',
+            'Selection propensities are stored per candidate, but under the greedy policy they '
+            'are all 1 or 0, so they show which candidates the policy ruled out completely; '
+            'they do not by themselves allow an estimate of what another policy would have found.',
+            'Each pick carries a 90% split conformal interval, which is a nominal level and '
+            'not a guarantee: it assumes the compound predicted is exchangeable with the '
+            'compounds the interval was calibrated on, and a batch chosen because the model '
+            'scored it highly is not. The observed coverage reported here is over selected '
+            'picks only, which is exactly the case where the level can fail.',
+            'Each round records a matched random shadow batch, but it is never assayed. It can be '
+            'compared with the real batch only once every shadow compound has a measurement, '
+            'which in a live campaign normally means never; in a retrospective replay with known '
+            'outcomes it means every round.',
         ],
     }
 

@@ -167,3 +167,227 @@ def test_decision_record_reports_the_model_as_it_was_not_as_it_is(tmp_path, inpu
     assert rounds[1]['basis']['training_sha256'] != rounds[2]['basis']['training_sha256']
     assert rounds[1]['why']['measurements_known_then'] == 32
     assert rounds[2]['why']['measurements_known_then'] == 40
+
+
+def test_each_decision_carries_the_propensity_stored_when_it_was_made(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    assert all(entry['why']['selection_propensity'] == 1.0 for entry in record(path))
+    off = review(path)['rounds'][0]['off_policy']
+    assert off['propensity_logged'] and off['deterministic'] and off['batch_followed_policy']
+    assert off['candidates_with_nonzero_propensity'] == 8 and off['candidates'] == 24
+    # A greedy policy logs propensities but gives passed-over candidates no chance at all.
+    assert off['usable_for_off_policy_evaluation'] is False
+    assert 'probability zero' in off['reason']
+    assert review(path)['totals']['rounds_usable_for_off_policy_evaluation'] == 0
+
+
+def test_rounds_from_before_propensity_logging_are_not_back_filled(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    from aster.campaign import transaction
+    with transaction(path, True) as state:
+        del state['rounds'][0]['propensity']
+        for row in state['rounds'][0]['slate']:
+            del row['propensity']
+    assert all(entry['why']['selection_propensity'] is None for entry in record(path))
+    off = review(path)['rounds'][0]['off_policy']
+    assert off['propensity_logged'] is False and off['usable_for_off_policy_evaluation'] is False
+    assert 'cannot be reconstructed' in off['reason']
+
+
+def test_only_a_followed_non_certain_policy_supports_off_policy_evaluation():
+    from aster.decisions import off_policy
+    base = {'deterministic': False, 'batch_followed_policy': True, 'nonzero': 24, 'candidates': 24}
+    assert off_policy({'propensity': base})['usable_for_off_policy_evaluation'] is True
+    overridden = off_policy({'propensity': {**base, 'batch_followed_policy': False}})
+    assert overridden['usable_for_off_policy_evaluation'] is False
+    assert 'person replaced' in overridden['reason']
+
+
+def measure_batch(path, tmp_path, round_record, value='7.0'):
+    import_results(path, round_record['round'],
+                   csv_file(tmp_path/f"results-{round_record['round']}.csv", ['compound_id', 'status', 'value'],
+                            [{'compound_id': r['compound_id'], 'status': 'measured', 'value': value}
+                             for r in round_record['recommendations']]))
+
+
+def test_each_pick_says_whether_the_shadow_batch_also_drew_it(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    first = propose(path)
+    shadow_ids = set(first['shadow']['ids'])
+    for entry in record(path):
+        assert entry['why']['also_in_shadow_batch'] == (entry['compound_id'] in shadow_ids)
+
+
+def test_an_unmeasured_shadow_batch_is_reported_but_never_compared(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    first = propose(path)
+    measure_batch(path, tmp_path, first)
+    report = review(path)
+    shadow = report['rounds'][0]['shadow']
+    shared = len(set(first['shadow']['ids']) & {r['compound_id'] for r in first['recommendations']})
+    assert shadow['logged'] and shadow['size'] == 8 and shadow['matches_committed_batch_size']
+    assert shadow['assayed'] is False and shadow['shared_with_committed_batch'] == shared
+    # Overlapping compounds were measured because the policy picked them, which is not random.
+    assert shadow['shadow_members_measured'] == shared and shadow['comparison'] is None
+    assert 'not against a random draw' in shadow['reason']
+    assert report['totals']['rounds_with_shadow_batch'] == 1
+    assert report['totals']['shadow_batches_comparable'] == 0
+    assert 'never assayed' in report['rounds'][0]['off_policy']['reason']
+
+
+@pytest.mark.parametrize('direction', ['higher_is_better', 'lower_is_better'])
+def test_a_fully_measured_shadow_batch_is_compared_in_the_declared_direction(tmp_path, inputs, direction):
+    from aster.campaign import transaction
+    path = campaign_at(tmp_path, inputs, direction=direction)
+    first = propose(path)
+    measure_batch(path, tmp_path, first, value='7.0')
+    # A retrospective replay knows every outcome; stand that in for the shadow compounds.
+    with transaction(path, True) as state:
+        for cid in first['shadow']['ids']:
+            if state['compounds'][cid]['status'] != 'measured':
+                state['compounds'][cid].update(status='measured', value=6.0)
+    comparison = review(path)['rounds'][0]['shadow']['comparison']
+    assert comparison['batch_best'] == 7.0 and comparison['batch_mean'] == 7.0
+    shared = set(first['shadow']['ids']) & {r['compound_id'] for r in first['recommendations']}
+    # Shared compounds carry the batch's 7.0; the rest of the shadow measured 6.0.
+    if direction == 'higher_is_better':
+        assert comparison['shadow_best'] == (7.0 if shared else 6.0)
+        assert comparison['batch_better_on_best'] == (not shared)
+    else:
+        assert comparison['shadow_best'] == 6.0 and comparison['batch_better_on_best'] is False
+    assert review(path)['totals']['shadow_batches_comparable'] == 1
+
+
+def test_rounds_from_before_shadow_batches_are_not_back_filled(tmp_path, inputs):
+    from aster.campaign import transaction
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    with transaction(path, True) as state:
+        del state['rounds'][0]['shadow']
+    assert all(entry['why']['also_in_shadow_batch'] is None for entry in record(path))
+    shadow = review(path)['rounds'][0]['shadow']
+    assert shadow['logged'] is False and shadow['comparison'] is None
+    assert 'before shadow batches' in shadow['reason']
+
+
+def test_each_decision_carries_its_interval_and_whether_the_result_landed_in_it(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    first = propose(path)
+    picks = first['recommendations']
+    half = first['uncertainty']['half_width']
+    # One pick measured inside its interval, one far outside it.
+    inside = picks[0]['interval']['center']
+    outside = picks[1]['interval']['center'] + 10 * half + 1
+    import_results(path, 1, csv_file(tmp_path/'r1.csv', ['compound_id', 'status', 'value'],
+                                     [{'compound_id': picks[0]['compound_id'], 'status': 'measured',
+                                       'value': str(inside)},
+                                      {'compound_id': picks[1]['compound_id'], 'status': 'measured',
+                                       'value': str(outside)}]))
+    entries = {entry['compound_id']: entry for entry in record(path)}
+    first_entry = entries[picks[0]['compound_id']]
+    assert first_entry['why']['interval']['half_width'] == half
+    assert first_entry['outcome']['inside_interval'] is True
+    assert entries[picks[1]['compound_id']]['outcome']['inside_interval'] is False
+    assert entries[picks[2]['compound_id']]['outcome']['status'] == 'awaiting_result'
+    explanation = why(path, picks[0]['compound_id'])['explanation']
+    assert 'nine times in ten' in explanation
+
+    reported = review(path)
+    round_one = reported['rounds'][0]['uncertainty']
+    assert round_one['interval_logged'] and round_one['nominal_coverage'] == 0.9
+    assert (round_one['picks_measured'], round_one['picks_inside_interval']) == (2, 1)
+    assert round_one['observed_coverage_this_round'] == 0.5
+    assert 'cannot measure a coverage rate' in round_one['reason']
+    assert reported['totals']['interval_coverage'] == {'measurements': 2, 'covered': 1,
+                                                       'observed_coverage': 0.5}
+    assert any('nominal level' in line for line in reported['limitations'])
+
+
+def test_a_round_decided_before_intervals_existed_reports_none(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    state = load(path)
+    for pick in state['rounds'][0]['recommendations']:
+        pick.pop('interval')
+    state['rounds'][0].pop('uncertainty')
+    reported = review(state)['rounds'][0]['uncertainty']
+    assert reported['interval_logged'] is False and reported['nominal_coverage'] is None
+    assert 'did not have' in reported['reason']
+    assert record(state)[0]['why']['interval'] is None
+
+
+def censored_campaign(tmp_path, inputs, **declared):
+    """A campaign whose four strongest measurements came back as bounds."""
+    measured, candidates = inputs
+    rows = list(csv.DictReader(measured.open()))
+    for row in rows[-4:]:
+        row['value'] = '> 6'
+    bounded = csv_file(tmp_path/'measured-bounded.csv', ['compound_id', 'smiles', 'value'], rows)
+    path = tmp_path/'campaign-bounded.sqlite'
+    create(path, bounded, candidates, name='Bounded', assay='assay-1',
+           **{'endpoint': 'pKi', 'unit': '', 'direction': 'higher_is_better', **declared})
+    return path
+
+
+def test_the_record_says_the_best_known_value_was_itself_a_bound(tmp_path, inputs):
+    path = censored_campaign(tmp_path, inputs)
+    propose(path)
+    entry = record(path)[0]
+    assert entry['why']['best_value_known_then'] == 6.0
+    assert entry['why']['best_value_known_then_relation'] == '>'
+    assert entry['why']['best_value_known_then_is_certain'] is False
+    assert entry['why']['censoring']['censored'] == 4
+    assert 'which is itself a bound' in why(path, entry['compound_id'])['explanation']
+
+
+def test_a_censored_result_is_counted_but_carries_no_error(tmp_path, inputs):
+    path = censored_campaign(tmp_path, inputs)
+    first = propose(path)
+    picks = [row['compound_id'] for row in first['recommendations']]
+    import_results(path, 1, csv_file(tmp_path/'results.csv', ['compound_id', 'status', 'value'],
+                                     [{'compound_id': cid, 'status': 'measured',
+                                       'value': '> 9' if index == 0 else '5.1'}
+                                      for index, cid in enumerate(picks)]))
+    entries = {entry['compound_id']: entry for entry in record(path)}
+    bounded = entries[picks[0]]
+    assert bounded['outcome']['relation'] == '>' and bounded['outcome']['error_reported'] is False
+    assert bounded['outcome']['prediction_error'] is None
+    assert bounded['outcome']['absolute_error'] is None
+    assert bounded['outcome']['inside_interval'] is None
+    # "> 9" against a best known of "> 6": both run off upwards, so whether this pick beat
+    # what was already known genuinely cannot be told, and the record says so.
+    assert bounded['outcome']['improved_on_best_known'] is None
+    assert bounded['verdict'] == 'undetermined'
+    explanation = why(path, picks[0])['explanation']
+    assert 'no prediction error to report' in explanation
+    assert 'cannot be told from bounds alone' in explanation
+    # An exact 5.1 certainly does not beat a best known of "> 6", which is determined.
+    exact = entries[picks[1]]
+    assert exact['outcome']['improved_on_best_known'] is False
+    assert exact['verdict'] == 'did_not_improve_on_what_was_known'
+
+
+def test_the_review_leaves_bounds_out_of_the_error_figures(tmp_path, inputs):
+    path = censored_campaign(tmp_path, inputs)
+    first = propose(path)
+    picks = [row['compound_id'] for row in first['recommendations']]
+    import_results(path, 1, csv_file(tmp_path/'results.csv', ['compound_id', 'status', 'value'],
+                                     [{'compound_id': cid, 'status': 'measured',
+                                       'value': '> 9' if index < 3 else '5.1'}
+                                      for index, cid in enumerate(picks)]))
+    summary = review(path)
+    first_round = summary['rounds'][0]
+    assert first_round['measured'] == 8
+    assert (first_round['measured_exactly'], first_round['measured_as_a_bound']) == (5, 3)
+    assert first_round['improvement_undetermined'] == 3
+    assert summary['totals']['measured_as_a_bound'] == 3
+    assert summary['totals']['improvement_undetermined'] == 3
+    # Five exact measurements of 5.1, so the error figures rest on five numbers, not eight.
+    entries = [e for e in record(path) if e['outcome']['error_reported']]
+    assert len(entries) == 5
+    assert summary['totals']['mean_absolute_error'] == pytest.approx(
+        sum(e['outcome']['absolute_error'] for e in entries)/5)
+    assert summary['totals']['interval_coverage']['measurements'] == 5
+    assert any('reported as a bound' in line for line in summary['limitations'])
