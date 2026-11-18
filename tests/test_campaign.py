@@ -290,11 +290,16 @@ def test_intervals_do_not_change_which_compounds_are_picked(campaign, inputs, tm
     assert without['uncertainty']['half_width'] is None
 
 
-def censored_inputs(tmp_path, bound='> 6', count=4):
-    """The same inputs as `inputs`, with the first few measurements reported as bounds."""
+def censored_inputs(tmp_path, bound='> 5.3', count=4):
+    """The same inputs as `inputs`, with the strongest measurements reported as bounds.
+
+    An assay that saturates censors its best compounds: it can say the value is past the
+    top of the tested range, not where past it. So the bound sits below where the model
+    places those compounds, which is the case a fit has to handle.
+    """
     measured = csv_file(tmp_path/'measured-censored.csv', ['compound_id', 'smiles', 'value'],
                         [{'compound_id': f'm{i:02}', 'smiles': 'C'*(i+1),
-                          'value': bound if i < count else 5+i/32} for i in range(32)])
+                          'value': bound if i >= 32-count else 5+i/32} for i in range(32)])
     candidates = csv_file(tmp_path/'candidates-censored.csv', ['compound_id', 'smiles'],
                           [{'compound_id': f'c{i:02}', 'smiles': 'C'*(i+1)+'N'} for i in range(24)])
     return measured, candidates
@@ -304,8 +309,8 @@ def test_create_stores_a_censored_measurement_as_a_bound(tmp_path):
     path = tmp_path/'censored.sqlite'
     create(path, *censored_inputs(tmp_path), name='Test', assay='assay-1', endpoint='pIC50', unit='uM')
     state = load(path)
-    assert state['compounds']['m00'] == {**state['compounds']['m00'], 'value': 6.0, 'relation': '>'}
-    assert state['compounds']['m31']['relation'] == '='
+    assert state['compounds']['m31'] == {**state['compounds']['m31'], 'value': 5.3, 'relation': '>'}
+    assert state['compounds']['m00']['relation'] == '='
     # A candidate has no measurement, so it has no relation either.
     assert state['compounds']['c00']['relation'] is None
     assert state['events'][0]['details']['censoring'] == {
@@ -335,3 +340,45 @@ def test_a_failed_assay_still_cannot_carry_a_bound(tmp_path, campaign):
     with pytest.raises(ValueError):
         import_results(campaign, 1, csv_file(tmp_path/'bad.csv',
                                              ['compound_id', 'status', 'value'], rows))
+
+
+def test_a_censored_campaign_records_the_fit_and_calibrates_on_exact_rows_only(tmp_path):
+    path = tmp_path/'censored-propose.sqlite'
+    create(path, *censored_inputs(tmp_path), name='Test', assay='assay-1', endpoint='pIC50')
+    record = propose(path)
+    assert record['censoring']['censored'] == 4 and record['censoring']['lower_bounded'] == 4
+    assert record['censoring']['converged'] and record['censoring']['iterations'] > 1
+    # The bounds moved off themselves, which is the whole point of fitting them as bounds.
+    assert record['censoring']['largest_target_shift_from_bound'] > 0
+    # 28 exact measurements, half of them held back, so the interval rests on 14 and says so.
+    assert record['uncertainty']['calibration_size'] == 14
+    assert record['uncertainty']['censored_measurements_excluded'] == 4
+    assert record['censoring']['policy'] in record['censoring']['policy']
+    assert 'censored.py' in record['source_sha256']
+
+
+def test_fitting_a_bound_as_a_bound_ranks_differently_from_writing_it_down_as_a_value(tmp_path):
+    bounded, candidates = censored_inputs(tmp_path)
+    # The same file with the bounds replaced by the bare number: this is what bound
+    # substitution does, and it is the practice this change exists to avoid.
+    substituted = csv_file(tmp_path/'substituted.csv', ['compound_id', 'smiles', 'value'],
+                           [{**row, 'value': row['value'].replace('> ', '')}
+                            for row in csv.DictReader(bounded.open())])
+    aware = propose(create(tmp_path/'aware.sqlite', bounded, candidates,
+                           name='Aware', assay='a', endpoint='pIC50') and tmp_path/'aware.sqlite')
+    naive = propose(create(tmp_path/'naive.sqlite', substituted, candidates,
+                           name='Naive', assay='a', endpoint='pIC50') and tmp_path/'naive.sqlite')
+    assert naive['censoring']['censored'] == 0
+    aware_predictions = [row['prediction'] for row in aware['recommendations']]
+    naive_predictions = [row['prediction'] for row in naive['recommendations']]
+    assert aware_predictions != naive_predictions
+
+
+def test_a_pick_carries_how_to_read_its_nearest_measured_neighbour(tmp_path):
+    path = tmp_path/'neighbour.sqlite'
+    create(path, *censored_inputs(tmp_path, count=32), name='Test', assay='a', endpoint='pIC50')
+    record = propose(path)
+    # Every measurement is a bound here, so every neighbour must be reported as one.
+    assert {row['nearest_measured_relation'] for row in record['recommendations']} == {'>'}
+    assert record['uncertainty']['half_width'] is None
+    assert record['recommendations'][0]['interval'] is None

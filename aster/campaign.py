@@ -257,14 +257,31 @@ def propose(path, batch_size=8):
             raise ValueError('Insufficient eligible candidates or more locked candidates than batch slots')
         x = fingerprints([compounds[c]['smiles'] for c in observed])
         y = np.asarray([compounds[c]['value'] for c in observed])
-        model = StableRidge('standard', 10).fit(x, y)
+        relations = [censored.relation_of(compounds[cid]) for cid in observed]
+        # Censored measurements enter the fit as bounds. With none present this is the
+        # ordinary ridge fit on the measured values, so the picks of an all-exact
+        # campaign are unchanged to the last digit.
+        model, censoring = censored.fit(
+            x, y, relations,
+            lambda features, values: StableRidge('standard', 10).fit(features, values))
+        # What the fit ended up treating each measurement as: the measurement itself when
+        # it is exact, and the model's own prediction where a bound allows it. The
+        # diagnostic range below is read off these rather than off the reported bounds.
+        targets = censored.clip(model.predict(x), relations, y)
         snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
         training_sha256 = hashlib.sha256(encoded(snapshot).encode()).hexdigest()
         # A second model, fitted without the calibration half, supplies the interval.
         # Ranking still uses the full-data model above, so adding intervals changes no pick.
+        # Censored rows are left out of calibration: the distance from a prediction to a
+        # bound is not a prediction error, so it cannot calibrate an interval width.
+        exact = censored.exact_rows(relations)
         calibration_model, uncertainty = conformal.calibrate(
-            x, y, seed=conformal.seed_from(training_sha256),
+            x[exact], y[exact], seed=conformal.seed_from(training_sha256),
             recipe={'mode': RECIPE['scaling'], 'alpha': RECIPE['alpha']})
+        if censoring['censored']:
+            uncertainty = {**uncertainty, 'censored_measurements_excluded': censoring['censored'],
+                           'calibrated_on': 'the exact measurements only; a bound supplies no '
+                                            'prediction error, so it calibrates nothing'}
         # Chunk scoring and nearest-neighbour evidence to bound similarity matrix size.
         predictions, centers, neighbours, similarities = [], [], [], []
         for start in range(0, len(pool), 256):
@@ -282,8 +299,8 @@ def propose(path, batch_size=8):
         sign = better(state)
         ranked = sorted((cid for cid in pool if cid not in locked),
                         key=lambda cid: (-sign * predictions[by_id[cid]], cid))
-        margin = EXTRAPOLATION_MARGIN * float(np.std(y)) if len(y) > 1 else 0.0
-        low, high = float(y.min()) - margin, float(y.max()) + margin
+        margin = EXTRAPOLATION_MARGIN * float(np.std(targets)) if len(targets) > 1 else 0.0
+        low, high = float(targets.min()) - margin, float(targets.max()) + margin
         selected = locked + ranked[:batch_size-len(locked)]
         propensity = greedy_propensity(ranked, locked, batch_size)
         # The full ranked slate records what was considered and rejected, not only the picks.
@@ -301,6 +318,8 @@ def propose(path, batch_size=8):
             rows.append({'rank': rank, 'compound_id': cid, 'smiles': compounds[cid]['smiles'],
                          'prediction': predictions[i], 'selection_reason': 'user_locked' if cid in locked else 'best_prediction',
                          'nearest_measured_id': neighbour, 'nearest_measured_value': compounds[neighbour]['value'],
+                         # How to read that neighbour's measurement: exact, or a bound.
+                         'nearest_measured_relation': censored.relation_of(compounds[neighbour]),
                          'similarity': similarities[i],
                          'outside_diagnostic_range': not low <= predictions[i] <= high,
                          # None when the measured set was too small to calibrate an interval.
@@ -321,6 +340,8 @@ def propose(path, batch_size=8):
                         'recommendations': rows, 'slate': slate, 'propensity': propensity_summary(propensity),
                         # The interval each pick carries, and what it rests on.
                         'uncertainty': uncertainty,
+                        # Which measurements were bounds, and what the fit did with them.
+                        'censoring': censoring,
                         # Recorded for later comparison only. Shadow compounds are never marked
                         # pending, exported or sent to the assay.
                         'shadow': shadow,
@@ -330,12 +351,13 @@ def propose(path, batch_size=8):
                                                                         if c['constraint'] == 'excluded')},
                         'declaration': declaration(state),
                         'diagnostic_range': {'low': low, 'high': high,
-                                             'basis': 'measured range extended by one standard deviation'},
+                                             'basis': 'range of what the fit treated the measurements '
+                                                      'as, extended by one standard deviation'},
                         'model': {'coefficients': coef.tolist(), 'intercept': intercept},
                         'versions': {p: importlib.metadata.version(p) for p in ('rdkit', 'numpy', 'scikit-learn')},
                         'source_sha256': {p: hashlib.sha256(Path(__file__).with_name(p).read_bytes()).hexdigest()
                                           for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py',
-                                                    'conformal.py')}}
+                                                    'conformal.py', 'censored.py')}}
         for cid in selected:
             compounds[cid]['status'] = 'pending'
         state['rounds'].append(round_record)
