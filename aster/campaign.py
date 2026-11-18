@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import conformal
+from . import censored, conformal
 from .acquisition import nearest_measured
 from .data import canonicalize, fingerprints
 from .heads import StableRidge
@@ -56,15 +56,14 @@ def read_csv(path, columns):
     return rows, hashlib.sha256(payload).hexdigest()
 
 
-def value_number(text):
-    try:
-        value = float(text)
-    except (TypeError, ValueError):
-        raise ValueError('Measurements must be exact numbers on the declared endpoint; '
-                         'censored values are unsupported') from None
-    if not math.isfinite(value):
-        raise ValueError("Measurements must be finite")
-    return value
+def measured_value(text):
+    """Read one reported measurement on the declared endpoint.
+
+    Exact numbers and bounds are both accepted: "7.4", "> 10", "< 0.5". A bound is
+    stored as a bound, so nothing downstream can mistake a limit of detection for a
+    result. Returns the relation and the number; see `aster/censored.py`.
+    """
+    return censored.parse(text)
 
 
 def event(state, action, details):
@@ -137,14 +136,19 @@ def create(path, measured, candidates, *, name, assay, endpoint, unit='', direct
             if cid in compounds or identity in identities:
                 raise ValueError(f'Duplicate compound ID or molecular identity: {cid}')
             identities.add(identity)
+            # `relation` says how to read `value`: '=' for an exact measurement, '<', '<=',
+            # '>' or '>=' when the assay reported a bound instead. It is None for a
+            # candidate, which has no measurement at all.
+            relation, value = measured_value(row['value']) if status == 'measured' else (None, None)
             compounds[cid] = {'smiles': structure, 'identity': identity, 'status': status,
-                              'value': value_number(row['value']) if status == 'measured' else None,
-                              'constraint': 'available'}
+                              'value': value, 'relation': relation, 'constraint': 'available'}
     state = {'schema': SCHEMA, 'name': name.strip(), 'assay': assay.strip(), 'endpoint': endpoint,
              'unit': unit, 'direction': direction, 'created_at': stamp(), 'recipe': RECIPE, 'compounds': compounds, 'rounds': [], 'events': []}
     event(state, 'create', {'measured_sha256': mh, 'candidates_sha256': ph,
                             'initial_count': len(observations), 'candidate_count': len(pool),
-                            'endpoint': endpoint, 'unit': unit, 'direction': direction})
+                            'endpoint': endpoint, 'unit': unit, 'direction': direction,
+                            'censoring': censored.summarize([compounds[r['compound_id']]
+                                                             for r in observations])})
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents overwriting an existing campaign.
@@ -354,7 +358,8 @@ def import_results(path, round_number, source):
                 raise ValueError(f'Result must belong to this round and be measured or failed: {cid}')
             if status == 'failed' and row['value']:
                 raise ValueError('Failed assays must have an empty value')
-            result = {'status': status, 'value': value_number(row['value']) if status == 'measured' else None}
+            relation, value = measured_value(row['value']) if status == 'measured' else (None, None)
+            result = {'status': status, 'value': value, 'relation': relation}
             if cid in record['results'] and record['results'][cid] != result:
                 raise ValueError(f'Cannot overwrite a recorded result: {cid}')
             parsed[cid] = result
@@ -366,7 +371,10 @@ def import_results(path, round_number, source):
             record['results'][cid] = result
         if set(record['results']) == expected:
             record['status'] = 'complete'
-        event(state, 'import_results', {'round': round_number, 'sha256': sha, 'ids': sorted(new)})
+        event(state, 'import_results', {'round': round_number, 'sha256': sha, 'ids': sorted(new),
+                                        'censoring': censored.summarize(
+                                            [result for result in new.values()
+                                             if result['status'] == 'measured'])})
         return {'added': len(new), 'round_status': record['status']}
 
 

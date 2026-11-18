@@ -133,7 +133,7 @@ def test_no_overwrite_and_bad_budget(campaign, inputs, tmp_path):
     assert out.read_bytes() == original
 
 
-@pytest.mark.parametrize('problem', ['overlap', 'invalid', 'mixture', 'nonfinite', 'censored', 'label_in_pool', 'small'])
+@pytest.mark.parametrize('problem', ['overlap', 'invalid', 'mixture', 'nonfinite', 'unreadable', 'label_in_pool', 'small'])
 def test_rejects_invalid_input_before_creating_database(tmp_path, inputs, problem):
     measured, candidates = inputs
     if problem == 'label_in_pool':
@@ -144,7 +144,8 @@ def test_rejects_invalid_input_before_creating_database(tmp_path, inputs, proble
     elif problem == 'small':
         measured.write_text('compound_id,smiles,value\nx,C,5\n')
     else:
-        measured.write_text(measured.read_text().replace('5.0', 'nan' if problem == 'nonfinite' else '>5', 1))
+        measured.write_text(measured.read_text().replace(
+            '5.0', 'nan' if problem == 'nonfinite' else '~5', 1))
     db = tmp_path/'rejected.sqlite'
     with pytest.raises(ValueError):
         create(db, measured, candidates, name='Test', assay='single', endpoint='pKi')
@@ -287,3 +288,50 @@ def test_intervals_do_not_change_which_compounds_are_picked(campaign, inputs, tm
             == [(r['compound_id'], r['prediction']) for r in with_intervals['recommendations']])
     assert all(row['interval'] is None for row in without['recommendations'])
     assert without['uncertainty']['half_width'] is None
+
+
+def censored_inputs(tmp_path, bound='> 6', count=4):
+    """The same inputs as `inputs`, with the first few measurements reported as bounds."""
+    measured = csv_file(tmp_path/'measured-censored.csv', ['compound_id', 'smiles', 'value'],
+                        [{'compound_id': f'm{i:02}', 'smiles': 'C'*(i+1),
+                          'value': bound if i < count else 5+i/32} for i in range(32)])
+    candidates = csv_file(tmp_path/'candidates-censored.csv', ['compound_id', 'smiles'],
+                          [{'compound_id': f'c{i:02}', 'smiles': 'C'*(i+1)+'N'} for i in range(24)])
+    return measured, candidates
+
+
+def test_create_stores_a_censored_measurement_as_a_bound(tmp_path):
+    path = tmp_path/'censored.sqlite'
+    create(path, *censored_inputs(tmp_path), name='Test', assay='assay-1', endpoint='pIC50', unit='uM')
+    state = load(path)
+    assert state['compounds']['m00'] == {**state['compounds']['m00'], 'value': 6.0, 'relation': '>'}
+    assert state['compounds']['m31']['relation'] == '='
+    # A candidate has no measurement, so it has no relation either.
+    assert state['compounds']['c00']['relation'] is None
+    assert state['events'][0]['details']['censoring'] == {
+        'measurements': 32, 'exact': 28, 'upper_bounded': 0, 'lower_bounded': 4, 'censored': 4}
+
+
+def test_results_may_be_censored_and_are_counted_as_such(tmp_path, campaign):
+    first = propose(campaign)
+    picks = first['recommendations']
+    rows = [{'compound_id': r['compound_id'], 'status': 'measured',
+             'value': '< 4.5' if index < 2 else '7.5'} for index, r in enumerate(picks)]
+    import_results(campaign, 1, csv_file(tmp_path/'censored-results.csv',
+                                         ['compound_id', 'status', 'value'], rows))
+    state = load(campaign)
+    stored = state['rounds'][0]['results'][picks[0]['compound_id']]
+    assert stored == {'status': 'measured', 'value': 4.5, 'relation': '<'}
+    assert state['compounds'][picks[0]['compound_id']]['relation'] == '<'
+    imported = [e for e in state['events'] if e['action'] == 'import_results'][-1]
+    assert imported['details']['censoring'] == {'measurements': 8, 'exact': 6, 'upper_bounded': 2,
+                                                'lower_bounded': 0, 'censored': 2}
+
+
+def test_a_failed_assay_still_cannot_carry_a_bound(tmp_path, campaign):
+    first = propose(campaign)
+    rows = [{'compound_id': r['compound_id'], 'status': 'failed', 'value': '> 10'}
+            for r in first['recommendations']]
+    with pytest.raises(ValueError):
+        import_results(campaign, 1, csv_file(tmp_path/'bad.csv',
+                                             ['compound_id', 'status', 'value'], rows))
