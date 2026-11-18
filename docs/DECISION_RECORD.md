@@ -26,9 +26,9 @@ python -m aster.campaign --db campaign.sqlite create \
   --measured measured.csv --candidates candidates.csv
 ```
 
-The contract is unchanged otherwise: one assay, one exact number per compound, no
-censored values. The declaration propagates through selection, exports, the stored
-rounds and the API.
+The contract is unchanged otherwise: one assay, one measurement per compound, exact or
+a bound such as `> 10` ([CENSORED.md](CENSORED.md)). The declaration propagates through
+selection, exports, the stored rounds and the API.
 
 Two consequences inside the workflow:
 
@@ -229,6 +229,8 @@ calibration-split model with the round recording how far apart the two centres s
 - It does not express confidence as a single score. The interval is calibrated against
   held-out error and reported with its nominal level and its assumption; similarity and
   the extrapolation flag remain diagnostics, not probabilities.
-- It does not record censored values such as "greater than 10 µM". The workflow still
-  requires exact numbers, so a campaign whose assay reports limits cannot be recorded
-  faithfully yet. That is the next real gap in the data model.
+- It records a censored value such as "greater than 10 µM" as a bound, and keeps it a
+  bound: such a pick has no prediction error, is left out of the error and coverage
+  figures, and can leave the improvement verdict `undetermined` rather than resolved by
+  guess. See [CENSORED.md](CENSORED.md). What it does not do is use the relation in
+  acquisition, or display it in the dashboard.

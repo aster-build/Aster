@@ -115,9 +115,15 @@ reads the queue, it does not plan.
   it is honest and close to uninformative at this amount of data. Written up in
   `docs/CONFORMAL.md`.
 
-- [ ] **8. Store censored measurements as {relation, value, unit}.** So that
+- [x] **8. Store censored measurements as {relation, value, unit}.** So that
   "> 10 µM" can be recorded faithfully instead of rejected, and propagates into
   the ranking rather than being silently treated as an exact number.
+  Done. `aster/censored.py` keeps the relation and fits a bound as a bound;
+  `docs/CENSORED.md` has the write-up. Measured three ways over 80 replays: keeping the
+  measurement instead of discarding it is worth +0.65 strong compounds per 32 assays on
+  a saturating assay (p = 0.004) and 0.12 to 0.14 log units of prediction error, while
+  fitting the bound as a bound rather than substituting it changed no pick on this
+  dataset, because ridge shrinkage keeps the predictions from crossing the limit.
 
 - [ ] **9. Record the chemical standardisation convention in the decision
   record.** Which tautomer and resonance conventions were applied, and the
