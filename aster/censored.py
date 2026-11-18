@@ -116,6 +116,30 @@ def bounds(relation, value):
     return float(value), float(value)
 
 
+def beats(relation, value, other_relation, other_value, sign):
+    """Is one measurement certainly better than another, in the declared direction?
+
+    Both sides may be bounds, so there are three answers, not two. "> 10" beats an exact
+    8 when larger is better, because every value it allows is above 8. It does not beat
+    "> 12": both run off upwards and either could be the larger. That case returns None,
+    which the decision record prints as undetermined rather than resolving it by guess.
+    """
+    low, high = bounds(relation, value)
+    other_low, other_high = bounds(other_relation, other_value)
+    if sign < 0:
+        low, high, other_low, other_high = _flip(low, high) + _flip(other_low, other_high)
+    if low is not None and other_high is not None and low > other_high:
+        return True
+    if high is not None and other_low is not None and high <= other_low:
+        return False
+    return None
+
+
+def _flip(low, high):
+    """Read an interval on an endpoint where smaller is better, so better is larger."""
+    return (None if high is None else -high, None if low is None else -low)
+
+
 def compare(relation, value, threshold, sign):
     """Is this measurement better than `threshold`, in the declared direction?
 
@@ -125,18 +149,7 @@ def compare(relation, value, threshold, sign):
     better, and certainly not better than 12 where smaller is better, but on an endpoint
     where larger is better it says nothing about 12.
     """
-    low, high = bounds(relation, value)
-    if sign > 0:
-        if low is not None and low > threshold:
-            return True
-        if high is not None and high <= threshold:
-            return False
-        return None
-    if high is not None and high < threshold:
-        return True
-    if low is not None and low >= threshold:
-        return False
-    return None
+    return beats(relation, value, EXACT, threshold, sign)
 
 
 def best_known(records, sign):

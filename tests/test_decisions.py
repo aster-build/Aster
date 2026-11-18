@@ -316,3 +316,78 @@ def test_a_round_decided_before_intervals_existed_reports_none(tmp_path, inputs)
     assert reported['interval_logged'] is False and reported['nominal_coverage'] is None
     assert 'did not have' in reported['reason']
     assert record(state)[0]['why']['interval'] is None
+
+
+def censored_campaign(tmp_path, inputs, **declared):
+    """A campaign whose four strongest measurements came back as bounds."""
+    measured, candidates = inputs
+    rows = list(csv.DictReader(measured.open()))
+    for row in rows[-4:]:
+        row['value'] = '> 6'
+    bounded = csv_file(tmp_path/'measured-bounded.csv', ['compound_id', 'smiles', 'value'], rows)
+    path = tmp_path/'campaign-bounded.sqlite'
+    create(path, bounded, candidates, name='Bounded', assay='assay-1',
+           **{'endpoint': 'pKi', 'unit': '', 'direction': 'higher_is_better', **declared})
+    return path
+
+
+def test_the_record_says_the_best_known_value_was_itself_a_bound(tmp_path, inputs):
+    path = censored_campaign(tmp_path, inputs)
+    propose(path)
+    entry = record(path)[0]
+    assert entry['why']['best_value_known_then'] == 6.0
+    assert entry['why']['best_value_known_then_relation'] == '>'
+    assert entry['why']['best_value_known_then_is_certain'] is False
+    assert entry['why']['censoring']['censored'] == 4
+    assert 'which is itself a bound' in why(path, entry['compound_id'])['explanation']
+
+
+def test_a_censored_result_is_counted_but_carries_no_error(tmp_path, inputs):
+    path = censored_campaign(tmp_path, inputs)
+    first = propose(path)
+    picks = [row['compound_id'] for row in first['recommendations']]
+    import_results(path, 1, csv_file(tmp_path/'results.csv', ['compound_id', 'status', 'value'],
+                                     [{'compound_id': cid, 'status': 'measured',
+                                       'value': '> 9' if index == 0 else '5.1'}
+                                      for index, cid in enumerate(picks)]))
+    entries = {entry['compound_id']: entry for entry in record(path)}
+    bounded = entries[picks[0]]
+    assert bounded['outcome']['relation'] == '>' and bounded['outcome']['error_reported'] is False
+    assert bounded['outcome']['prediction_error'] is None
+    assert bounded['outcome']['absolute_error'] is None
+    assert bounded['outcome']['inside_interval'] is None
+    # "> 9" against a best known of "> 6": both run off upwards, so whether this pick beat
+    # what was already known genuinely cannot be told, and the record says so.
+    assert bounded['outcome']['improved_on_best_known'] is None
+    assert bounded['verdict'] == 'undetermined'
+    explanation = why(path, picks[0])['explanation']
+    assert 'no prediction error to report' in explanation
+    assert 'cannot be told from bounds alone' in explanation
+    # An exact 5.1 certainly does not beat a best known of "> 6", which is determined.
+    exact = entries[picks[1]]
+    assert exact['outcome']['improved_on_best_known'] is False
+    assert exact['verdict'] == 'did_not_improve_on_what_was_known'
+
+
+def test_the_review_leaves_bounds_out_of_the_error_figures(tmp_path, inputs):
+    path = censored_campaign(tmp_path, inputs)
+    first = propose(path)
+    picks = [row['compound_id'] for row in first['recommendations']]
+    import_results(path, 1, csv_file(tmp_path/'results.csv', ['compound_id', 'status', 'value'],
+                                     [{'compound_id': cid, 'status': 'measured',
+                                       'value': '> 9' if index < 3 else '5.1'}
+                                      for index, cid in enumerate(picks)]))
+    summary = review(path)
+    first_round = summary['rounds'][0]
+    assert first_round['measured'] == 8
+    assert (first_round['measured_exactly'], first_round['measured_as_a_bound']) == (5, 3)
+    assert first_round['improvement_undetermined'] == 3
+    assert summary['totals']['measured_as_a_bound'] == 3
+    assert summary['totals']['improvement_undetermined'] == 3
+    # Five exact measurements of 5.1, so the error figures rest on five numbers, not eight.
+    entries = [e for e in record(path) if e['outcome']['error_reported']]
+    assert len(entries) == 5
+    assert summary['totals']['mean_absolute_error'] == pytest.approx(
+        sum(e['outcome']['absolute_error'] for e in entries)/5)
+    assert summary['totals']['interval_coverage']['measurements'] == 5
+    assert any('reported as a bound' in line for line in summary['limitations'])

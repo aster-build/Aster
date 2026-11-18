@@ -13,20 +13,21 @@ from pathlib import Path
 
 import numpy as np
 
-from . import conformal
+from . import censored, conformal
 from .campaign import declaration, load
 
 PENDING = 'awaiting_result'
-
-
-def _numbers(record):
-    """Measurements known to the model when this round was proposed."""
-    return np.asarray([row['value'] for row in record['training']], dtype=float)
+UNDETERMINED = 'undetermined'
 
 
 def _best_known(record, sign):
-    values = _numbers(record)
-    return float(values.max()) if sign > 0 else float(values.min())
+    """The best measurement known when the round was proposed.
+
+    Returns the number, how to read it, and whether the measurements settle it. With a
+    bound among them it may not: if the best thing known is "> 10" on an endpoint where
+    larger is better, nothing later can be called an improvement on it with certainty.
+    """
+    return censored.best_known(record['training'], sign)
 
 
 def decision(state, record, pick):
@@ -61,10 +62,18 @@ def decision(state, record, pick):
             'interval': pick.get('interval'),
             'nearest_measured_id': pick['nearest_measured_id'],
             'nearest_measured_value': pick['nearest_measured_value'],
+            # '=' unless that neighbour's own measurement was a bound.
+            'nearest_measured_relation': pick.get('nearest_measured_relation') or censored.EXACT,
             'similarity_to_nearest_measured': pick['similarity'],
             'outside_diagnostic_range': pick['outside_diagnostic_range'],
-            'best_value_known_then': known,
+            'best_value_known_then': known['value'],
+            # How to read that number, and whether the measurements pin it down.
+            'best_value_known_then_relation': known['relation'],
+            'best_value_known_then_is_certain': known['certain'],
             'measurements_known_then': len(record['training']),
+            # Which of those measurements were bounds rather than numbers, and what the
+            # fit did with them. None for a round proposed before bounds were supported.
+            'censoring': record.get('censoring'),
         },
         'basis': {
             'training_sha256': record['training_sha256'],
@@ -84,14 +93,28 @@ def decision(state, record, pick):
         entry['verdict'] = 'no_result'
         return entry
     observed = float(result['value'])
-    entry['outcome'] = {'status': 'measured', 'value': observed,
-                        'prediction_error': observed - pick['prediction'],
-                        'absolute_error': abs(observed - pick['prediction']),
-                        # None when this pick carries no interval. One pick landing inside
-                        # or outside says nothing on its own; the rate over many does.
-                        'inside_interval': conformal.covers(pick.get('interval'), observed),
-                        'improved_on_best_known': bool(sign * (observed - known) > 0)}
-    entry['verdict'] = ('improved_on_what_was_known' if entry['outcome']['improved_on_best_known']
+    relation = censored.relation_of(result)
+    # A measurement reported as a bound is not a number, so the distance from it to the
+    # prediction is not an error and is left out rather than computed from the bound.
+    exact = relation == censored.EXACT
+    improved = (censored.beats(relation, observed, known['relation'] or censored.EXACT,
+                               known['value'], sign)
+                if known['value'] is not None else None)
+    entry['outcome'] = {'status': 'measured', 'value': observed, 'relation': relation,
+                        'prediction_error': observed - pick['prediction'] if exact else None,
+                        'absolute_error': abs(observed - pick['prediction']) if exact else None,
+                        # None when this pick carries no interval, or the measurement is a
+                        # bound. One pick landing inside or outside says nothing on its own;
+                        # the rate over many does.
+                        'inside_interval': conformal.covers(pick.get('interval'), observed) if exact else None,
+                        # None when the bounds do not settle it, which is a real answer.
+                        'improved_on_best_known': improved,
+                        'error_reported': exact,
+                        'reason': None if exact else
+                                  'The assay reported a bound, so there is no prediction error to '
+                                  'report and the interval cannot be scored on this pick.'}
+    entry['verdict'] = ('improved_on_what_was_known' if improved
+                        else UNDETERMINED if improved is None
                         else 'did_not_improve_on_what_was_known')
     return entry
 
@@ -147,8 +170,11 @@ def shadow(state, round_record):
     sign = 1.0 if declaration(state)['direction'] == 'higher_is_better' else -1.0
     batch = [row['compound_id'] for row in round_record['recommendations']]
     shared = sorted(set(logged['ids']) & set(batch))
+    # A bound is not usable here: the comparison is of best and mean values, and a bound
+    # has neither. A shadow batch holding one is reported as not comparable.
     known = {cid: state['compounds'][cid]['value'] for cid in logged['ids']
-             if state['compounds'][cid]['status'] == 'measured'}
+             if state['compounds'][cid]['status'] == 'measured'
+             and not censored.is_censored(state['compounds'][cid])}
     entry = {'logged': True, 'policy': logged['policy'], 'size': len(logged['ids']),
              'matches_committed_batch_size': len(logged['ids']) == len(batch),
              'shared_with_committed_batch': len(shared),
@@ -156,11 +182,12 @@ def shadow(state, round_record):
              'chance_of_each_unlocked_candidate': logged['propensity_unlocked'],
              'assayed': logged['assayed'], 'shadow_members_measured': len(known)}
     batch_values = [round_record['results'][cid]['value'] for cid in batch
-                    if round_record['results'].get(cid, {}).get('status') == 'measured']
+                    if round_record['results'].get(cid, {}).get('status') == 'measured'
+                    and not censored.is_censored(round_record['results'][cid])]
     if len(known) < len(logged['ids']) or len(batch_values) < len(batch):
         missing = len(logged['ids']) - len(known)
         return {**entry, 'comparison': None,
-                'reason': f'{missing} of {len(logged["ids"])} shadow compounds have no measurement'
+                'reason': f'{missing} of {len(logged["ids"])} shadow compounds have no exact measurement'
                           + ('' if len(batch_values) == len(batch)
                              else ', and the committed batch is not fully measured')
                           + '. Comparing a partial shadow batch would compare against the '
@@ -193,7 +220,10 @@ def uncertainty(round_record, picks):
                            'This round was decided before intervals were recorded. A width '
                            'computed now would use measurements the decision did not have, '
                            'so none is reported.')}
-    measured = [entry for entry in picks if entry['outcome']['status'] == 'measured']
+    # Only exact measurements can be scored against an interval: a bound does not say
+    # where the value is, so it cannot say whether the interval contained it.
+    measured = [entry for entry in picks if entry['outcome']['status'] == 'measured'
+                and entry['outcome']['error_reported']]
     observed = conformal.coverage([(entry['why']['interval'], entry['outcome']['value'])
                                    for entry in measured])
     return {'interval_logged': True, 'method': logged['method'],
@@ -247,9 +277,16 @@ def sentence(state, entry):
                 f"{entry['why']['candidates_considered']} eligible candidates, with a predicted "
                 f"{endpoint['endpoint']} of {entry['why']['prediction']:.2f}{unit}. Its nearest measured "
                 f"analog then was {entry['why']['nearest_measured_id']} at "
-                f"{entry['why']['nearest_measured_value']:.2f}{unit} "
-                f"(Tanimoto similarity {entry['why']['similarity_to_nearest_measured']:.2f}), and the best "
-                f"measurement known at the time was {entry['why']['best_value_known_then']:.2f}{unit}.")
+                + censored.text(entry['why']['nearest_measured_value'],
+                                entry['why'].get('nearest_measured_relation') or censored.EXACT,
+                                endpoint['unit'])
+                + f" (Tanimoto similarity {entry['why']['similarity_to_nearest_measured']:.2f}), and the best "
+                + 'measurement known at the time was '
+                + censored.text(entry['why']['best_value_known_then'],
+                                entry['why'].get('best_value_known_then_relation') or censored.EXACT,
+                                endpoint['unit'])
+                + ('.' if entry['why'].get('best_value_known_then_is_certain', True)
+                   else ', which is itself a bound, so the true best was somewhere past it.'))
     span = entry['why'].get('interval')
     if span and span['half_width'] is not None:
         why_text += (f" The interval recorded with it ran {span['low']:.2f} to {span['high']:.2f}{unit}, "
@@ -258,11 +295,22 @@ def sentence(state, entry):
     outcome = entry['outcome']
     if outcome['status'] == 'measured':
         sign = 1.0 if endpoint['direction'] == 'higher_is_better' else -1.0
-        direction = 'better' if sign * outcome['prediction_error'] > 0 else 'worse'
-        return (why_text + f" It measured {outcome['value']:.2f}{unit}, "
-                f"{abs(outcome['prediction_error']):.2f} {direction} than predicted, which "
-                + ('beat' if outcome['improved_on_best_known'] else 'did not beat')
-                + ' the best measurement known when it was chosen.')
+        reported = censored.text(outcome['value'], outcome.get('relation') or censored.EXACT, endpoint['unit'])
+        verdict = (' which beat' if outcome['improved_on_best_known']
+                   else ' and whether that beat' if outcome['improved_on_best_known'] is None
+                   else ' which did not beat')
+        tail = (' the best measurement known when it was chosen.'
+                if outcome['improved_on_best_known'] is not None
+                else ' the best measurement known when it was chosen cannot be told from bounds alone.')
+        if outcome['error_reported']:
+            direction = 'better' if sign * outcome['prediction_error'] > 0 else 'worse'
+            middle = (f" It measured {reported}, {abs(outcome['prediction_error']):.2f} "
+                      f"{direction} than predicted,")
+        else:
+            # The assay reported a bound, so there is no distance to the prediction to give.
+            middle = (f" It measured {reported}, which is a bound rather than a value, so there "
+                      f"is no prediction error to report,")
+        return why_text + middle + verdict + tail
     if outcome['status'] == 'failed':
         return why_text + ' The assay failed, so there is no result to judge the pick against.'
     return why_text + ' The result has not been imported yet.'
@@ -277,15 +325,22 @@ def review(path_or_state):
     for round_record in state['rounds']:
         picks = [entry for entry in entries if entry['round'] == round_record['round']]
         measured = [entry for entry in picks if entry['outcome']['status'] == 'measured']
-        errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured])
-        signed = np.asarray([entry['outcome']['prediction_error'] for entry in measured])
+        # Error, rank agreement and the best value of the round are computed on the exact
+        # measurements only. A bound has no distance to the prediction, and averaging it in
+        # as though it were a number is the mistake this release exists to stop.
+        scored = [entry for entry in measured if entry['outcome']['error_reported']]
+        errors = np.asarray([entry['outcome']['absolute_error'] for entry in scored])
+        signed = np.asarray([entry['outcome']['prediction_error'] for entry in scored])
         improved = [entry for entry in measured if entry['outcome']['improved_on_best_known']]
-        predicted = [entry['why']['prediction'] for entry in measured]
-        observed = [entry['outcome']['value'] for entry in measured]
+        predicted = [entry['why']['prediction'] for entry in scored]
+        observed = [entry['outcome']['value'] for entry in scored]
         rounds.append({
             'round': round_record['round'],
             'status': round_record['status'],
             'picks': len(picks), 'measured': len(measured),
+            'measured_exactly': len(scored),
+            'measured_as_a_bound': len(measured) - len(scored),
+            'improvement_undetermined': sum(entry['verdict'] == UNDETERMINED for entry in measured),
             'failed': sum(entry['outcome']['status'] == 'failed' for entry in picks),
             'awaiting_result': sum(entry['verdict'] == PENDING for entry in picks),
             'improved_on_best_known': len(improved),
@@ -299,24 +354,35 @@ def review(path_or_state):
             'shadow': shadow(state, round_record),
         })
     measured = [entry for entry in entries if entry['outcome']['status'] == 'measured']
-    errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured])
+    errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured
+                         if entry['outcome']['error_reported']])
     return {
         'campaign': state['name'], 'assay': state['assay'], **declaration(state),
         'rounds': rounds,
         'totals': {'decisions': len(entries), 'measured': len(measured),
-                   'improved_on_best_known': sum(entry['outcome']['improved_on_best_known']
+                   'improved_on_best_known': sum(bool(entry['outcome']['improved_on_best_known'])
                                                  for entry in measured),
+                   'measured_as_a_bound': sum(not entry['outcome']['error_reported']
+                                              for entry in measured),
+                   'improvement_undetermined': sum(entry['verdict'] == UNDETERMINED
+                                                   for entry in entries),
                    'mean_absolute_error': float(errors.mean()) if len(errors) else None,
                    'awaiting_result': sum(entry['verdict'] == PENDING for entry in entries),
                    'rounds_usable_for_off_policy_evaluation': sum(
                        round_entry['off_policy']['usable_for_off_policy_evaluation']
                        for round_entry in rounds),
                    'interval_coverage': conformal.coverage(
-                       [(entry['why']['interval'], entry['outcome']['value']) for entry in measured]),
+                       [(entry['why']['interval'], entry['outcome']['value']) for entry in measured
+                        if entry['outcome']['error_reported']]),
                    'rounds_with_shadow_batch': sum(round_entry['shadow']['logged'] for round_entry in rounds),
                    'shadow_batches_comparable': sum(round_entry['shadow']['comparison'] is not None
                                                     for round_entry in rounds)},
         'limitations': [
+            'A measurement reported as a bound, such as "> 10", is kept as a bound. It counts '
+            'as a measurement, but it supplies no prediction error, so it is left out of the '
+            'error figures, the rank agreement and the interval coverage rather than being '
+            'averaged in as though the bound were the value. Where bounds leave it genuinely '
+            'unknown whether a pick improved on what was known, the verdict says undetermined.',
             'Only picks have outcomes. Rejected candidates were never measured, so this cannot '
             'say whether a different batch would have been better.',
             'Prediction error is measured against the model as it stood in that round, not '
