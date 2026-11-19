@@ -125,10 +125,14 @@ reads the queue, it does not plan.
   fitting the bound as a bound rather than substituting it changed no pick on this
   dataset, because ridge shrinkage keeps the predictions from crossing the limit.
 
-- [ ] **9. Record the chemical standardisation convention in the decision
+- [x] **9. Record the chemical standardisation convention in the decision
   record.** Which tautomer and resonance conventions were applied, and the
   RDKit version that applied them. Reported to move some error metrics by over
   20%, so an unrecorded convention makes two campaigns incomparable.
+  Done. `aster/standardisation.py` states the convention as data with a probe hash;
+  every campaign and round stores it and the decision record reports it. See
+  `docs/STANDARDISATION.md`. Not done: the outside "over 20%" claim was not tested on
+  Aster's data. If wanted, add it as its own item.
 
 - [ ] **10. Replace the 4 Å proximity rule with a real interaction audit.** Use
   PDBFixer to repair the receptor and PLIP to list actual hydrogen bonds,

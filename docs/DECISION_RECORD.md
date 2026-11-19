@@ -221,6 +221,15 @@ Ranking is untouched by all of this: the picks still come from the full-data mod
 every earlier milestone stays comparable, and the interval is centred on the
 calibration-split model with the round recording how far apart the two centres sat.
 
+## How structures were read
+
+Each round also records the standardisation convention its fingerprints were computed
+under: tautomers are not merged, salts are refused, charges are kept, and only the
+resonance forms RDKit sanitisation merges are merged. It names the RDKit version and
+carries a probe hash, so two campaigns can be checked for the same reading of
+structures before their error figures are compared. Rounds from before this was logged
+say `unknown`. See [STANDARDISATION.md](STANDARDISATION.md).
+
 ## What this deliberately does not do
 
 - It does not put evidence into the ranking. [Milestone 9](EVIDENCE_SELECTION.md) tested
