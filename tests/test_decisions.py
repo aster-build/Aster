@@ -391,3 +391,52 @@ def test_the_review_leaves_bounds_out_of_the_error_figures(tmp_path, inputs):
         sum(e['outcome']['absolute_error'] for e in entries)/5)
     assert summary['totals']['interval_coverage']['measurements'] == 5
     assert any('reported as a bound' in line for line in summary['limitations'])
+
+
+def test_record_and_review_carry_the_standardisation_convention(tmp_path, inputs):
+    from aster import standardisation
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    entry = record(path)[0]
+    logged = entry['basis']['standardisation']
+    assert logged['convention'] == standardisation.CONVENTION_ID
+    assert logged['matches_campaign']['verdict'] == 'same'
+    summary = review(path)
+    assert summary['rounds'][0]['standardisation']['probe_sha256'] == logged['probe_sha256']
+    totals = summary['totals']['standardisation']
+    assert totals['consistent'] is True and totals['rounds_without_record'] == 0
+    assert len(totals['distinct_readings']) == 1
+    assert any('standardised' in text for text in summary['limitations'])
+
+
+def test_rounds_from_before_logging_are_unknown_not_assumed(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    state = load(path)
+    del state['standardisation']
+    for round_record in state['rounds']:
+        del round_record['standardisation']
+    assert record(state)[0]['basis']['standardisation'] is None
+    totals = review(state)['totals']['standardisation']
+    assert totals == {'campaign_created_under': None, 'rounds_with_record': 0,
+                      'rounds_without_record': 1, 'distinct_readings': [], 'consistent': None}
+
+
+def test_a_round_read_under_another_rdkit_is_flagged(tmp_path, inputs):
+    path = campaign_at(tmp_path, inputs)
+    propose(path)
+    state = load(path)
+    state['rounds'][0]['standardisation']['probe_sha256'] = '0' * 64
+    totals = review(state)['totals']['standardisation']
+    assert totals['consistent'] is False and len(totals['distinct_readings']) == 1
+
+
+def test_two_campaigns_can_be_compared(tmp_path, inputs):
+    from aster.decisions import compare_campaigns
+    first = campaign_at(tmp_path, inputs)
+    second = campaign_at(tmp_path, inputs, direction='lower_is_better')
+    assert compare_campaigns(first, second)['verdict'] == 'same'
+    older = load(second)
+    del older['standardisation']
+    result = compare_campaigns(first, older)
+    assert result['verdict'] == 'unknown' and result['comparable'] is None

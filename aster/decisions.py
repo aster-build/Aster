@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import censored, conformal
+from . import censored, conformal, standardisation
 from .campaign import declaration, load
 
 PENDING = 'awaiting_result'
@@ -80,6 +80,10 @@ def decision(state, record, pick):
             'recipe': record['recipe'],
             'model_intercept': record['model']['intercept'],
             'library_versions': record.get('versions', {}),
+            # Which tautomer, resonance, charge and salt conventions turned structures into
+            # the features this pick was ranked on, and the RDKit that applied them. None
+            # for a round proposed before conventions were logged; never back-filled.
+            'standardisation': reading(record),
             'module_sha256': record.get('source_sha256', {}),
             'diagnostic_range': record.get('diagnostic_range'),
         },
@@ -239,6 +243,39 @@ def uncertainty(round_record, picks):
                       'campaign total, and the selected-batch coverage study, instead.'}
 
 
+def reading(round_record):
+    """The round's standardisation record, short form, or None if it predates logging."""
+    logged = round_record.get('standardisation')
+    if logged is None:
+        return None
+    return {**standardisation.summary(logged),
+            'campaign_created_under': logged.get('campaign_created_under'),
+            'matches_campaign': logged.get('matches_campaign')}
+
+
+def readings(state):
+    """Did every round of this campaign read structures the same way?"""
+    logged = [r.get('standardisation') for r in state['rounds']]
+    known = [standardisation.summary(r) for r in logged if r is not None]
+    distinct = [dict(t) for t in dict.fromkeys(tuple(sorted(k.items())) for k in known)]
+    created = state.get('standardisation')
+    return {'campaign_created_under': standardisation.summary(created) if created else None,
+            'rounds_with_record': len(known),
+            'rounds_without_record': len(logged) - len(known),
+            'distinct_readings': distinct,
+            'consistent': (len(distinct) <= 1 and all(
+                standardisation.compare(created, r)['comparable'] for r in logged if r is not None)
+                if created is not None and len(known) == len(logged) else None)}
+
+
+def compare_campaigns(first, second):
+    """Can the identities and error figures of two campaigns be set side by side?"""
+    first = first if isinstance(first, dict) else load(first)
+    second = second if isinstance(second, dict) else load(second)
+    return {'campaigns': [first['name'], second['name']],
+            **standardisation.compare(first.get('standardisation'), second.get('standardisation'))}
+
+
 def record(path_or_state):
     """Every decision this campaign has made, oldest first."""
     state = path_or_state if isinstance(path_or_state, dict) else load(path_or_state)
@@ -352,6 +389,7 @@ def review(path_or_state):
             'uncertainty': uncertainty(round_record, picks),
             'off_policy': off_policy(round_record),
             'shadow': shadow(state, round_record),
+            'standardisation': reading(round_record),
         })
     measured = [entry for entry in entries if entry['outcome']['status'] == 'measured']
     errors = np.asarray([entry['outcome']['absolute_error'] for entry in measured
@@ -376,7 +414,8 @@ def review(path_or_state):
                         if entry['outcome']['error_reported']]),
                    'rounds_with_shadow_batch': sum(round_entry['shadow']['logged'] for round_entry in rounds),
                    'shadow_batches_comparable': sum(round_entry['shadow']['comparison'] is not None
-                                                    for round_entry in rounds)},
+                                                    for round_entry in rounds),
+                   'standardisation': readings(state)},
         'limitations': [
             'A measurement reported as a bound, such as "> 10", is kept as a bound. It counts '
             'as a measurement, but it supplies no prediction error, so it is left out of the '
@@ -401,6 +440,11 @@ def review(path_or_state):
             'compared with the real batch only once every shadow compound has a measurement, '
             'which in a live campaign normally means never; in a retrospective replay with known '
             'outcomes it means every round.',
+            'Each round records how structures were standardised: tautomers are not merged, '
+            'salts are refused rather than stripped, charges are kept, and only the resonance '
+            'forms RDKit sanitization merges are merged. Error figures from two campaigns that '
+            'read structures differently are not directly comparable, and a campaign created '
+            'before this was logged is reported as unknown rather than assumed to match.',
         ],
     }
 
@@ -422,10 +466,14 @@ def main():
     question.add_argument('compound_id')
     commands.add_parser('record', help='every decision this campaign has made')
     commands.add_parser('review', help='how the picks actually turned out')
+    other = commands.add_parser('compare', help='did two campaigns read structures the same way?')
+    other.add_argument('other', type=Path, help='the second campaign database')
     args = parser.parse_args()
     try:
         if args.command == 'why':
             output = why(args.db, args.compound_id)
+        elif args.command == 'compare':
+            output = compare_campaigns(args.db, args.other)
         elif args.command == 'record':
             output = record(args.db)
         else:
