@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import censored, conformal, standardisation
 from .acquisition import nearest_measured
 from .data import canonicalize, fingerprints
 from .heads import StableRidge
@@ -55,15 +56,14 @@ def read_csv(path, columns):
     return rows, hashlib.sha256(payload).hexdigest()
 
 
-def value_number(text):
-    try:
-        value = float(text)
-    except (TypeError, ValueError):
-        raise ValueError('Measurements must be exact numbers on the declared endpoint; '
-                         'censored values are unsupported') from None
-    if not math.isfinite(value):
-        raise ValueError("Measurements must be finite")
-    return value
+def measured_value(text):
+    """Read one reported measurement on the declared endpoint.
+
+    Exact numbers and bounds are both accepted: "7.4", "> 10", "< 0.5". A bound is
+    stored as a bound, so nothing downstream can mistake a limit of detection for a
+    result. Returns the relation and the number; see `aster/censored.py`.
+    """
+    return censored.parse(text)
 
 
 def event(state, action, details):
@@ -136,14 +136,26 @@ def create(path, measured, candidates, *, name, assay, endpoint, unit='', direct
             if cid in compounds or identity in identities:
                 raise ValueError(f'Duplicate compound ID or molecular identity: {cid}')
             identities.add(identity)
+            # `relation` says how to read `value`: '=' for an exact measurement, '<', '<=',
+            # '>' or '>=' when the assay reported a bound instead. It is None for a
+            # candidate, which has no measurement at all.
+            relation, value = measured_value(row['value']) if status == 'measured' else (None, None)
             compounds[cid] = {'smiles': structure, 'identity': identity, 'status': status,
-                              'value': value_number(row['value']) if status == 'measured' else None,
-                              'constraint': 'available'}
+                              'value': value, 'relation': relation, 'constraint': 'available'}
+    # How structures were read into identities: the convention, the RDKit version that
+    # applied it, and a probe hash. Taken once here, because the identities and the
+    # duplicate check above were computed under it. A campaign created before this was
+    # logged has no such key, and nothing back-fills one.
+    reading = standardisation.current()
     state = {'schema': SCHEMA, 'name': name.strip(), 'assay': assay.strip(), 'endpoint': endpoint,
-             'unit': unit, 'direction': direction, 'created_at': stamp(), 'recipe': RECIPE, 'compounds': compounds, 'rounds': [], 'events': []}
+             'unit': unit, 'direction': direction, 'created_at': stamp(), 'recipe': RECIPE,
+             'standardisation': reading, 'compounds': compounds, 'rounds': [], 'events': []}
     event(state, 'create', {'measured_sha256': mh, 'candidates_sha256': ph,
                             'initial_count': len(observations), 'candidate_count': len(pool),
-                            'endpoint': endpoint, 'unit': unit, 'direction': direction})
+                            'endpoint': endpoint, 'unit': unit, 'direction': direction,
+                            'standardisation': standardisation.summary(reading),
+                            'censoring': censored.summarize([compounds[r['compound_id']]
+                                                             for r in observations])})
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents overwriting an existing campaign.
@@ -171,6 +183,71 @@ def constrain(path, ids, mode):
         event(state, 'constraints', {'ids': ids, 'mode': mode})
 
 
+def greedy_propensity(ranked, locked, batch_size):
+    """Probability that the greedy policy would select each eligible candidate.
+
+    Written into the slate when the batch is decided, because it cannot be rebuilt
+    later: a future analysis that asks "what would a different policy have found?"
+    has to reweight each measured pick by how likely the policy in force was to pick
+    it. Greedy selection with a fixed tie-break is deterministic, so every value is
+    exactly 1.0 or 0.0. Locked compounds are 1.0 because the user forced them in.
+    Excluded compounds never reach the slate; their propensity is 0.0 by construction.
+    """
+    chosen = set(locked) | set(ranked[:batch_size-len(locked)])
+    return {cid: 1.0 if cid in chosen else 0.0 for cid in list(locked) + list(ranked)}
+
+
+def propensity_summary(propensity, followed=True):
+    """Round-level statement of what the stored propensities can and cannot support."""
+    values = list(propensity.values())
+    return {'of': 'the policy in force, computed when the batch was decided',
+            'deterministic': all(value in (0.0, 1.0) for value in values),
+            'nonzero': sum(value > 0 for value in values),
+            'candidates': len(values),
+            # False when a person replaced the policy's picks at commit time. The stored
+            # propensities still describe the policy, but the batch was chosen by a person
+            # whose probabilities nobody recorded.
+            'batch_followed_policy': followed}
+
+
+def shadow_seed(training_sha256, eligible_ids, round_number):
+    """Seed for the shadow draw, fixed by what the round was decided from.
+
+    It depends on the training snapshot, the eligible pool and the round number only,
+    never on predictions, so the draw cannot lean toward compounds the model likes, and
+    re-proposing the same round reproduces the same shadow batch.
+    """
+    basis = encoded({'training_sha256': training_sha256, 'eligible_ids': sorted(eligible_ids),
+                     'round': round_number})
+    return int(hashlib.sha256(basis.encode()).hexdigest()[:16], 16)
+
+
+def shadow_batch(pool, locked, batch_size, seed):
+    """A matched random batch: recorded with every committed batch, never assayed.
+
+    Same size and same constraints as the real batch (locked compounds in, excluded
+    ones out), with the free slots filled uniformly at random from the rest of the same
+    eligible pool. The policy's own picks stay in the draw, so the two batches can
+    overlap; leaving them out would make the shadow a sample of "what greedy rejected"
+    rather than of a random policy. Every unlocked candidate has the same chance of
+    being drawn, which is stored as the shadow policy's propensity.
+    """
+    locked_set = set(locked)
+    free = sorted(cid for cid in pool if cid not in locked_set)
+    slots = batch_size - len(locked)
+    order = np.random.default_rng(seed).permutation(len(free))
+    drawn = [free[i] for i in order[:slots]]
+    return {'policy': 'random',
+            'rule': 'same size and constraints as the batch; free slots drawn uniformly '
+                    'at random from the same eligible pool',
+            'ids': list(locked) + drawn, 'size': batch_size, 'locked': list(locked),
+            'pool_size': len(pool), 'seed': seed,
+            'seed_basis': 'sha256 of the training snapshot hash, the eligible ids and the round number',
+            'propensity_unlocked': slots / len(free) if free else 0.0,
+            'propensity_locked': 1.0,
+            'assayed': False}
+
+
 def propose(path, batch_size=8):
     if not isinstance(batch_size, int) or isinstance(batch_size, bool) or batch_size < 1:
         raise ValueError('Batch size must be a positive integer')
@@ -187,13 +264,39 @@ def propose(path, batch_size=8):
             raise ValueError('Insufficient eligible candidates or more locked candidates than batch slots')
         x = fingerprints([compounds[c]['smiles'] for c in observed])
         y = np.asarray([compounds[c]['value'] for c in observed])
-        model = StableRidge('standard', 10).fit(x, y)
+        relations = [censored.relation_of(compounds[cid]) for cid in observed]
+        # Censored measurements enter the fit as bounds. With none present this is the
+        # ordinary ridge fit on the measured values, so the picks of an all-exact
+        # campaign are unchanged to the last digit.
+        model, censoring = censored.fit(
+            x, y, relations,
+            lambda features, values: StableRidge('standard', 10).fit(features, values))
+        # What the fit ended up treating each measurement as: the measurement itself when
+        # it is exact, and the model's own prediction where a bound allows it. The
+        # diagnostic range below is read off these rather than off the reported bounds.
+        targets = censored.clip(model.predict(x), relations, y)
+        snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
+        training_sha256 = hashlib.sha256(encoded(snapshot).encode()).hexdigest()
+        # A second model, fitted without the calibration half, supplies the interval.
+        # Ranking still uses the full-data model above, so adding intervals changes no pick.
+        # Censored rows are left out of calibration: the distance from a prediction to a
+        # bound is not a prediction error, so it cannot calibrate an interval width.
+        exact = censored.exact_rows(relations)
+        calibration_model, uncertainty = conformal.calibrate(
+            x[exact], y[exact], seed=conformal.seed_from(training_sha256),
+            recipe={'mode': RECIPE['scaling'], 'alpha': RECIPE['alpha']})
+        if censoring['censored']:
+            uncertainty = {**uncertainty, 'censored_measurements_excluded': censoring['censored'],
+                           'calibrated_on': 'the exact measurements only; a bound supplies no '
+                                            'prediction error, so it calibrates nothing'}
         # Chunk scoring and nearest-neighbour evidence to bound similarity matrix size.
-        predictions, neighbours, similarities = [], [], []
+        predictions, centers, neighbours, similarities = [], [], [], []
         for start in range(0, len(pool), 256):
             chunk = pool[start:start+256]
             features = fingerprints([compounds[c]['smiles'] for c in chunk])
             predictions.extend(model.predict(features).tolist())
+            if calibration_model is not None:
+                centers.extend(calibration_model.predict(features).tolist())
             nearest, novelty = nearest_measured(features, x)
             neighbours.extend([observed[i] for i in nearest])
             similarities.extend((1-novelty).tolist())
@@ -203,12 +306,17 @@ def propose(path, batch_size=8):
         sign = better(state)
         ranked = sorted((cid for cid in pool if cid not in locked),
                         key=lambda cid: (-sign * predictions[by_id[cid]], cid))
-        margin = EXTRAPOLATION_MARGIN * float(np.std(y)) if len(y) > 1 else 0.0
-        low, high = float(y.min()) - margin, float(y.max()) + margin
+        margin = EXTRAPOLATION_MARGIN * float(np.std(targets)) if len(targets) > 1 else 0.0
+        low, high = float(targets.min()) - margin, float(targets.max()) + margin
         selected = locked + ranked[:batch_size-len(locked)]
+        propensity = greedy_propensity(ranked, locked, batch_size)
         # The full ranked slate records what was considered and rejected, not only the picks.
+        # The slate keeps each candidate's interval centre, not the whole interval: the
+        # half-width is one number for the round, and a person who overrides the picks at
+        # commit time needs the centre of whatever they chose instead.
         slate = [{'rank': rank, 'compound_id': cid, 'prediction': predictions[by_id[cid]],
-                  'selected': cid in selected}
+                  'selected': cid in selected, 'propensity': propensity[cid],
+                  'interval_center': centers[by_id[cid]] if centers else None}
                  for rank, cid in enumerate(sorted(pool, key=lambda c: (-sign * predictions[by_id[c]], c)), 1)]
         rows = []
         for rank, cid in enumerate(selected, 1):
@@ -217,24 +325,60 @@ def propose(path, batch_size=8):
             rows.append({'rank': rank, 'compound_id': cid, 'smiles': compounds[cid]['smiles'],
                          'prediction': predictions[i], 'selection_reason': 'user_locked' if cid in locked else 'best_prediction',
                          'nearest_measured_id': neighbour, 'nearest_measured_value': compounds[neighbour]['value'],
+                         # How to read that neighbour's measurement: exact, or a bound.
+                         'nearest_measured_relation': censored.relation_of(compounds[neighbour]),
                          'similarity': similarities[i],
-                         'outside_diagnostic_range': not low <= predictions[i] <= high})
+                         'outside_diagnostic_range': not low <= predictions[i] <= high,
+                         # None when the measured set was too small to calibrate an interval.
+                         'interval': (conformal.interval(centers[i], uncertainty['half_width'])
+                                      if centers else None)})
+        if centers:
+            # How far the interval's centre sits from the number that did the ranking.
+            drift = [abs(centers[by_id[cid]] - predictions[by_id[cid]]) for cid in selected]
+            uncertainty = {**uncertainty, 'centered_on': 'the calibration-split model, not the '
+                                                         'full-data model used for ranking',
+                           'mean_center_offset_from_ranking_prediction': float(np.mean(drift))}
         coef, intercept = model.linear_coefficients()
-        snapshot = [{'compound_id': cid, **compounds[cid]} for cid in observed]
-        round_record = {'round': len(state['rounds']) + 1, 'created_at': stamp(), 'status': 'pending',
-                        'training': snapshot, 'training_sha256': hashlib.sha256(encoded(snapshot).encode()).hexdigest(),
+        number = len(state['rounds']) + 1
+        # The fingerprints above were computed from the stored structures by the RDKit in
+        # use now, which need not be the one that read them in. Record both readings and
+        # whether they agree. A disagreement is recorded rather than refused: refusing would
+        # lock every campaign out on an RDKit upgrade, and the record is what lets a reader
+        # judge whether it mattered.
+        reading = standardisation.current()
+        created = state.get('standardisation')
+        reading = {**reading, 'campaign_created_under': (standardisation.summary(created)
+                                                         if created else None),
+                   'matches_campaign': standardisation.compare(created, reading)}
+        shadow = shadow_batch(pool, locked, batch_size, shadow_seed(training_sha256, pool, number))
+        round_record = {'round': number, 'created_at': stamp(), 'status': 'pending',
+                        'training': snapshot, 'training_sha256': training_sha256,
                         'eligible_ids': pool, 'constraints': {cid: compounds[cid]['constraint'] for cid in pool},
-                        'recommendations': rows, 'slate': slate, 'results': {}, 'recipe': state['recipe'],
+                        'recommendations': rows, 'slate': slate, 'propensity': propensity_summary(propensity),
+                        # The interval each pick carries, and what it rests on.
+                        'uncertainty': uncertainty,
+                        # Which measurements were bounds, and what the fit did with them.
+                        'censoring': censoring,
+                        # Recorded for later comparison only. Shadow compounds are never marked
+                        # pending, exported or sent to the assay.
+                        'shadow': shadow,
+                        'results': {}, 'recipe': state['recipe'],
                         'policy': {'id': state['recipe']['policy'], 'rule': 'rank by predicted value in the declared direction',
                                    'locked': locked, 'excluded': sorted(cid for cid, c in compounds.items()
                                                                         if c['constraint'] == 'excluded')},
                         'declaration': declaration(state),
                         'diagnostic_range': {'low': low, 'high': high,
-                                             'basis': 'measured range extended by one standard deviation'},
+                                             'basis': 'range of what the fit treated the measurements '
+                                                      'as, extended by one standard deviation'},
                         'model': {'coefficients': coef.tolist(), 'intercept': intercept},
                         'versions': {p: importlib.metadata.version(p) for p in ('rdkit', 'numpy', 'scikit-learn')},
+                        # Which tautomer, resonance, charge and salt conventions turned the
+                        # structures into the features this round ranked on.
+                        'standardisation': reading,
                         'source_sha256': {p: hashlib.sha256(Path(__file__).with_name(p).read_bytes()).hexdigest()
-                                          for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py')}}
+                                          for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py',
+                                                    'conformal.py', 'censored.py',
+                                                    'standardisation.py')}}
         for cid in selected:
             compounds[cid]['status'] = 'pending'
         state['rounds'].append(round_record)
@@ -257,7 +401,8 @@ def import_results(path, round_number, source):
                 raise ValueError(f'Result must belong to this round and be measured or failed: {cid}')
             if status == 'failed' and row['value']:
                 raise ValueError('Failed assays must have an empty value')
-            result = {'status': status, 'value': value_number(row['value']) if status == 'measured' else None}
+            relation, value = measured_value(row['value']) if status == 'measured' else (None, None)
+            result = {'status': status, 'value': value, 'relation': relation}
             if cid in record['results'] and record['results'][cid] != result:
                 raise ValueError(f'Cannot overwrite a recorded result: {cid}')
             parsed[cid] = result
@@ -269,7 +414,10 @@ def import_results(path, round_number, source):
             record['results'][cid] = result
         if set(record['results']) == expected:
             record['status'] = 'complete'
-        event(state, 'import_results', {'round': round_number, 'sha256': sha, 'ids': sorted(new)})
+        event(state, 'import_results', {'round': round_number, 'sha256': sha, 'ids': sorted(new),
+                                        'censoring': censored.summarize(
+                                            [result for result in new.values()
+                                             if result['status'] == 'measured'])})
         return {'added': len(new), 'round_status': record['status']}
 
 

@@ -32,8 +32,9 @@ candidate-001,CCN
 The small examples show column format, not sufficient training data. IDs are strings;
 leading zeroes are preserved. UTF-8 and UTF-8 with BOM are accepted. Duplicate IDs,
 duplicate molecular identities across either file, invalid structures, disconnected
-mixtures, missing/nonfinite measurements, and censored measurements such as `>8`
-are rejected before campaign creation. Rejection is all-or-nothing: no silent row
+mixtures and missing or nonfinite measurements are rejected before campaign creation.
+A censored measurement such as `> 8` is accepted and stored as a bound; see
+[CENSORED.md](CENSORED.md). Rejection is all-or-nothing: no silent row
 removal or replicate averaging. RDKit retains stereochemistry and charge; no salt
 stripping or tautomer merging occurs. Numeric values are not proof of assay QC.
 
