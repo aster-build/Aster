@@ -382,3 +382,40 @@ def test_a_pick_carries_how_to_read_its_nearest_measured_neighbour(tmp_path):
     assert {row['nearest_measured_relation'] for row in record['recommendations']} == {'>'}
     assert record['uncertainty']['half_width'] is None
     assert record['recommendations'][0]['interval'] is None
+
+
+def test_campaign_and_round_record_how_structures_were_read(tmp_path):
+    import json
+    import sqlite3
+
+    from aster import standardisation
+    measured = tmp_path/'m.csv'
+    measured.write_text('compound_id,smiles,value\n' + ''.join(f'm{i},{"C"*(i+1)},{5+i/32}\n' for i in range(32)))
+    candidates = tmp_path/'c.csv'
+    candidates.write_text('compound_id,smiles\n' + ''.join(f'c{i},{"C"*(i+1)}N\n' for i in range(12)))
+    path = tmp_path/'campaign.sqlite'
+    state = create(path, measured, candidates, name='Test', assay='a', endpoint='pKi')
+    assert state['standardisation'] == standardisation.current()
+    assert state['events'][0]['details']['standardisation'] == standardisation.summary(state['standardisation'])
+    batch = propose(path)
+    reading = batch['standardisation']
+    assert reading['convention'] == standardisation.CONVENTION_ID
+    assert reading['campaign_created_under'] == standardisation.summary(state['standardisation'])
+    assert reading['matches_campaign']['verdict'] == 'same'
+    assert 'standardisation.py' in batch['source_sha256']
+
+    # A campaign created before conventions were logged still proposes, and its round
+    # says the comparison is unknown rather than pretending it matched.
+    connection = sqlite3.connect(path)
+    with connection:
+        stored = json.loads(connection.execute('SELECT payload FROM campaign').fetchone()[0])
+        del stored['standardisation']
+        stored['rounds'] = []
+        for compound in stored['compounds'].values():
+            if compound['status'] == 'pending':
+                compound['status'] = 'available'
+        connection.execute('UPDATE campaign SET payload=?', (json.dumps(stored),))
+    connection.close()
+    older = propose(path)
+    assert older['standardisation']['campaign_created_under'] is None
+    assert older['standardisation']['matches_campaign']['verdict'] == 'unknown'

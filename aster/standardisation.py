@@ -88,6 +88,11 @@ def current():
             'rdkit_version': rdBase.rdkitVersion, 'probe_sha256': probe_sha256()}
 
 
+def summary(record):
+    """The three fields that identify a reading, without the long description."""
+    return {key: record[key] for key in ('convention', 'rdkit_version', 'probe_sha256')}
+
+
 def compare(first, second):
     """Can structures read under `first` be compared with ones read under `second`?
 

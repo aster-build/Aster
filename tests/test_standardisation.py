@@ -74,3 +74,8 @@ def test_changing_canonicalize_without_a_new_id_would_be_caught(monkeypatch):
     monkeypatch.setattr(standardisation, 'canonicalize',
                         lambda smiles: ('X', 'X'))
     assert probe_sha256() != before
+
+
+def test_summary_keeps_only_the_identifying_fields():
+    assert standardisation.summary(current()) == {
+        key: current()[key] for key in ('convention', 'rdkit_version', 'probe_sha256')}

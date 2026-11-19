@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import censored, conformal
+from . import censored, conformal, standardisation
 from .acquisition import nearest_measured
 from .data import canonicalize, fingerprints
 from .heads import StableRidge
@@ -142,11 +142,18 @@ def create(path, measured, candidates, *, name, assay, endpoint, unit='', direct
             relation, value = measured_value(row['value']) if status == 'measured' else (None, None)
             compounds[cid] = {'smiles': structure, 'identity': identity, 'status': status,
                               'value': value, 'relation': relation, 'constraint': 'available'}
+    # How structures were read into identities: the convention, the RDKit version that
+    # applied it, and a probe hash. Taken once here, because the identities and the
+    # duplicate check above were computed under it. A campaign created before this was
+    # logged has no such key, and nothing back-fills one.
+    reading = standardisation.current()
     state = {'schema': SCHEMA, 'name': name.strip(), 'assay': assay.strip(), 'endpoint': endpoint,
-             'unit': unit, 'direction': direction, 'created_at': stamp(), 'recipe': RECIPE, 'compounds': compounds, 'rounds': [], 'events': []}
+             'unit': unit, 'direction': direction, 'created_at': stamp(), 'recipe': RECIPE,
+             'standardisation': reading, 'compounds': compounds, 'rounds': [], 'events': []}
     event(state, 'create', {'measured_sha256': mh, 'candidates_sha256': ph,
                             'initial_count': len(observations), 'candidate_count': len(pool),
                             'endpoint': endpoint, 'unit': unit, 'direction': direction,
+                            'standardisation': standardisation.summary(reading),
                             'censoring': censored.summarize([compounds[r['compound_id']]
                                                              for r in observations])})
     path = Path(path)
@@ -333,6 +340,16 @@ def propose(path, batch_size=8):
                            'mean_center_offset_from_ranking_prediction': float(np.mean(drift))}
         coef, intercept = model.linear_coefficients()
         number = len(state['rounds']) + 1
+        # The fingerprints above were computed from the stored structures by the RDKit in
+        # use now, which need not be the one that read them in. Record both readings and
+        # whether they agree. A disagreement is recorded rather than refused: refusing would
+        # lock every campaign out on an RDKit upgrade, and the record is what lets a reader
+        # judge whether it mattered.
+        reading = standardisation.current()
+        created = state.get('standardisation')
+        reading = {**reading, 'campaign_created_under': (standardisation.summary(created)
+                                                         if created else None),
+                   'matches_campaign': standardisation.compare(created, reading)}
         shadow = shadow_batch(pool, locked, batch_size, shadow_seed(training_sha256, pool, number))
         round_record = {'round': number, 'created_at': stamp(), 'status': 'pending',
                         'training': snapshot, 'training_sha256': training_sha256,
@@ -355,9 +372,13 @@ def propose(path, batch_size=8):
                                                       'as, extended by one standard deviation'},
                         'model': {'coefficients': coef.tolist(), 'intercept': intercept},
                         'versions': {p: importlib.metadata.version(p) for p in ('rdkit', 'numpy', 'scikit-learn')},
+                        # Which tautomer, resonance, charge and salt conventions turned the
+                        # structures into the features this round ranked on.
+                        'standardisation': reading,
                         'source_sha256': {p: hashlib.sha256(Path(__file__).with_name(p).read_bytes()).hexdigest()
                                           for p in ('campaign.py', 'data.py', 'heads.py', 'acquisition.py',
-                                                    'conformal.py', 'censored.py')}}
+                                                    'conformal.py', 'censored.py',
+                                                    'standardisation.py')}}
         for cid in selected:
             compounds[cid]['status'] = 'pending'
         state['rounds'].append(round_record)
