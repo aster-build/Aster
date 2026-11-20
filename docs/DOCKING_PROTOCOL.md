@@ -16,6 +16,10 @@ Primary reference: pinned RCSB 8Y2G, CCD A1D5U (dexmethylphenidate), human DAT Q
 - A protonated-amine sensitivity experiment, if run, is separately labeled and cannot retroactively replace this primary protocol. Additional protocol revisions must retain original results.
 - Five seeds on one structure assess stability, not independent generalization. Cross-docking on additional compatible, unused DAT complexes is a later transfer gate; do not claim it passed from redocking alone.
 
+## Interaction reporting, added 2026-11-20
+
+Pose contacts are reported as interactions named by PLIP on a PDBFixer-repaired receptor, with tool versions and PLIP's distance and angle thresholds stored in each result. Missing heavy atoms inside present residues are rebuilt; whole unmodelled residues are reported with their distance to the ligand and not built. Receptor protonation is Open Babel's, through PLIP; the ligand keeps the campaign charge state. The audit reads the receptor that retains ions and glycans while Vina continues to score the protein-only receptor. Without PLIP and PDBFixer installed the audit reports itself unavailable; the ≤4 Å proximity list is never relabelled as an interaction. Details and the deposited-complex reference result: `INTERACTION_AUDIT.md`.
+
 ## Product behavior
 
 The user can request docking only for a campaign compound, against an explicitly named prepared reference. Jobs are bounded, queued, and persisted. Identity/provenance and validation status accompany every result. Docking never changes campaign ranking, measurements, constraints, or batch commitment. No docking score is labeled pKi or binding probability.
