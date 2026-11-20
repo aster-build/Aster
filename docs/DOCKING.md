@@ -1,6 +1,6 @@
 # Milestone 7B — exploratory DAT docking
 
-Implemented locally on 2026-10-14. The dashboard inspector links to **Explore 3D docking**. In `/replay`, choose Score candidates or Select batch, choose a compound, and click **Dock selected compound**. Jobs survive page reloads; results and validation checks are saved. Green candidate poses overlay the violet experimental ligand. Select alternatives or hide the overlay to compare. Contact lists show shared/new residues within 4 Å; these are proximity measurements, not hydrogen-bond assignments or energetic explanations.
+Implemented locally on 2026-10-14. The dashboard inspector links to **Explore 3D docking**. In `/replay`, choose Score candidates or Select batch, choose a compound, and click **Dock selected compound**. Jobs survive page reloads; results and validation checks are saved. Green candidate poses overlay the violet experimental ligand. Select alternatives or hide the overlay to compare. Each pose lists the interactions PLIP names for it (hydrogen bonds, hydrophobic contacts, salt bridges, ring stacking, metal coordination) with the geometry behind each one; the older ≤4 Å residue list is kept behind a disclosure as proximity only. See [the interaction audit](INTERACTION_AUDIT.md). A named interaction is still geometry plus assigned protonation, not measured binding.
 
 ## What the validation found
 
