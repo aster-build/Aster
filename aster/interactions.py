@@ -173,9 +173,20 @@ def repair_receptor(pdb_text, add_missing_residues=False):
     app = import_module('openmm.app')
     fixer = pdbfixer.PDBFixer(pdbfile=StringIO(pdb_text))
     fixer.findMissingResidues()
-    missing_residues = [{'chain_index': key[0], 'after_residue_index': key[1],
-                         'residues': list(value)}
-                        for key, value in sorted(fixer.missingResidues.items())]
+    chains = list(fixer.topology.chains())
+    missing_residues = []
+    for key, value in sorted(fixer.missingResidues.items()):
+        residues = list(chains[key[0]].residues())
+        def flank(index):
+            if index < 0 or index >= len(residues):
+                return None
+            residue = residues[index]
+            return {'residue': residue.name, 'chain': residue.chain.id,
+                    'sequence': residue.id}
+        missing_residues.append({'chain': chains[key[0]].id, 'count': len(value),
+                                 'residues': list(value),
+                                 'preceding_residue': flank(key[1] - 1),
+                                 'following_residue': flank(key[1])})
     if not add_missing_residues:
         fixer.missingResidues = {}
     fixer.findNonstandardResidues()
@@ -229,6 +240,44 @@ def build_complex(receptor_pdb, ligand_block):
     return '\n'.join(keep + ligand + ['END', ''])
 
 
+def _coordinates(lines, match):
+    out = []
+    for line in lines:
+        if line.startswith(('ATOM', 'HETATM')) and match(line):
+            out.append((float(line[30:38]), float(line[38:46]), float(line[46:54])))
+    return out
+
+
+def gap_distances(complex_pdb, missing_residues, ligand_residue='LIG'):
+    """How far each unmodelled stretch sits from the ligand.
+
+    An unbuilt gap on the far side of the protein cannot hide a pocket
+    interaction; one that flanks the pocket can, and the audit should say which
+    it is instead of leaving the reader to guess.
+    """
+    lines = complex_pdb.splitlines()
+    ligand = _coordinates(lines, lambda line: line[17:20].strip() == ligand_residue)
+    if not ligand:
+        return missing_residues
+    out = []
+    for gap in missing_residues:
+        nearest = None
+        for side in ('preceding_residue', 'following_residue'):
+            flank = gap.get(side)
+            if not flank:
+                continue
+            coords = _coordinates(lines, lambda line, flank=flank: (
+                line[21:22].strip() == str(flank['chain']).strip()
+                and line[22:26].strip() == str(flank['sequence']).strip()))
+            for x, y, z in coords:
+                for lx, ly, lz in ligand:
+                    distance = ((x - lx) ** 2 + (y - ly) ** 2 + (z - lz) ** 2) ** 0.5
+                    nearest = distance if nearest is None else min(nearest, distance)
+        out.append({**gap, 'nearest_flank_to_ligand_angstrom':
+                    None if nearest is None else round(nearest, 3)})
+    return out
+
+
 def audit(receptor_pdb, molecule, receptor_label=None, repair=True,
           ligand_residue='LIG'):
     """Name the interactions between one docked pose and one receptor."""
@@ -268,6 +317,8 @@ def audit_block(receptor_pdb, ligand_block, receptor_label=None, repair=True,
             return {**base, 'status': 'failed',
                     'reason': f'PLIP found {len(sites)} binding sites for {ligand_residue}, expected one.'}
         interactions = normalise(sites[0], ligand_residue)
+        repair_report['missing_residues_reported'] = gap_distances(
+            complex_pdb, repair_report.get('missing_residues_reported') or [], ligand_residue)
         return {**base, 'status': 'complete', 'repair': repair_report,
                 'thresholds': thresholds(), 'interactions': interactions,
                 'residues': residues(interactions),

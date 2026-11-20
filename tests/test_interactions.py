@@ -87,3 +87,20 @@ def test_audit_reports_a_failure_instead_of_silently_returning_nothing(monkeypat
     monkeypatch.setattr(interactions,'repair_receptor',lambda text,**kw:(_ for _ in ()).throw(RuntimeError('receptor is broken')))
     report=interactions.audit_block('ATOM\n','HETATM x\n')
     assert report['status']=='failed' and 'receptor is broken' in report['reason']
+
+def test_gap_distance_says_whether_an_unbuilt_gap_could_reach_the_pocket():
+    def atom(serial,name,residue,chain,sequence,x,y,z):
+        return f"ATOM  {serial:>5} {name:<4} {residue:>3} {chain}{sequence:>4}    {x:>8.3f}{y:>8.3f}{z:>8.3f}  1.00  0.00"
+    lines=[atom(1,'CA','GLY','A',10,0,0,0),atom(2,'CA','GLY','A',30,40,0,0),
+           "HETATM    3  C1  LIG Z 900       3.000   0.000   0.000  1.00  0.00           C"]
+    gaps=[{'chain':'A','count':2,'residues':['SER','SER'],
+           'preceding_residue':{'residue':'GLY','chain':'A','sequence':'10'},
+           'following_residue':None},
+          {'chain':'A','count':1,'residues':['ALA'],
+           'preceding_residue':{'residue':'GLY','chain':'A','sequence':'30'},
+           'following_residue':None}]
+    near,far=interactions.gap_distances('\n'.join(lines),gaps)
+    assert near['nearest_flank_to_ligand_angstrom']==3.0
+    assert far['nearest_flank_to_ligand_angstrom']==37.0
+    # No ligand records means no distance to report, and the gaps are returned as they were.
+    assert interactions.gap_distances('\n'.join(lines[:2]),gaps)==gaps
