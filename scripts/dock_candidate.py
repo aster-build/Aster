@@ -7,6 +7,13 @@ from rdkit import Chem
 from posebusters import PoseBusters
 from validate_docking import ROOT, BASE, STRUCT, prepare_ligand, run, canonical, save, digest
 from prepare_structure import atoms_from_pinned_cif
+from aster import interactions
+
+# The audit uses the receptor that keeps the ions and glycans, the same one the
+# physical checks use. Vina still scores against the protein-only receptor, so the
+# scoring approximation is unchanged; the audit simply gets to see atoms the
+# scoring receptor cannot represent.
+AUDIT_RECEPTOR = BASE / 'validation-receptor.pdb'
 
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('directory',type=Path); args=parser.parse_args()
@@ -26,6 +33,7 @@ def main():
     scores=[float(line.split()[3]) for line in (directory/'poses.pdbqt').read_text().splitlines() if line.startswith('REMARK VINA RESULT:')]
     atoms=[a for a in atoms_from_pinned_cif((STRUCT/'complex.cif').read_text()) if a['label_entity_id']=='1']
     xyz=np.array([a['xyz'] for a in atoms]); results=[]
+    audit,per_pose=interactions.audit_poses(AUDIT_RECEPTOR.read_text(),poses,receptor_label=str(AUDIT_RECEPTOR.relative_to(ROOT)))
     for i,(pose,(_,row)) in enumerate(zip(poses,frame.iterrows())):
         checks={k:(bool(v) if isinstance(v,(bool,np.bool_)) else None) for k,v in row.items()}
         checks['chemical_identity_preserved']=canonical(pose)==canonical(molecule)
@@ -39,7 +47,17 @@ def main():
             if distance<=4 and (key not in contacts or distance<contacts[key]['distance']):
                 contacts[key]={'residue':a['label_comp_id'],'sequence':int(key),'chain':a['auth_asym_id'],'protein_atom':a['label_atom_id'],'ligand_atom_index':nearest,'distance':distance}
         failures=[k for k,v in checks.items() if v is not True]
-        results.append({'rank':i+1,'score_kcal_mol':scores[i],'passed':not failures,'failed_checks':failures,'checks':checks,'contacts':sorted(contacts.values(),key=lambda c:c['distance']),'sdf':Chem.MolToMolBlock(pose)+'\n$$$$\n'})
-    save(directory/'result.json',{'compound_id':request['compound_id'],'smiles':request['smiles'],'reference':'8Y2G','validation_sha256':request['validation_sha256'],'seed':17,'poses':results,'cross_docking_validated':False,'limitations':['Protein-only rigid-receptor scoring; ions omitted.','Single seed per candidate; protonation supplied by the campaign, not pH enumeration.','Docking score is not pKi, a binding probability or evidence of experimental binding.','No cross-docking or prospective validation; campaign ranking is unchanged.']})
+        results.append({'rank':i+1,'score_kcal_mol':scores[i],'passed':not failures,'failed_checks':failures,'checks':checks,
+                        'interactions':per_pose[i]['interactions'],'interaction_status':per_pose[i]['status'],
+                        'interaction_residues':per_pose[i].get('residues',[]),
+                        # The proximity list stays, labelled for what it is: it drives the
+                        # 3D residue highlighting and it is what old results contain. It is
+                        # no longer the pose's account of how it binds.
+                        'proximity_contacts':sorted(contacts.values(),key=lambda c:c['distance']),
+                        'sdf':Chem.MolToMolBlock(pose)+'\n$$$$\n'})
+    save(directory/'result.json',{'compound_id':request['compound_id'],'smiles':request['smiles'],'reference':'8Y2G','validation_sha256':request['validation_sha256'],'seed':17,'poses':results,'cross_docking_validated':False,
+        'interaction_audit':audit,
+        'proximity_contact_definition':'Minimum heavy-atom distance <= 4 A to a protein-entity atom; proximity only, superseded by interaction_audit.',
+        'limitations':['Protein-only rigid-receptor scoring; ions omitted.','Single seed per candidate; protonation supplied by the campaign, not pH enumeration.','Docking score is not pKi, a binding probability or evidence of experimental binding.','No cross-docking or prospective validation; campaign ranking is unchanged.','Named interactions come from PLIP geometry and assigned protonation, not from measurement.']})
 
 if __name__=='__main__': main()

@@ -104,3 +104,41 @@ def test_gap_distance_says_whether_an_unbuilt_gap_could_reach_the_pocket():
     assert far['nearest_flank_to_ligand_angstrom']==37.0
     # No ligand records means no distance to report, and the gaps are returned as they were.
     assert interactions.gap_distances('\n'.join(lines[:2]),gaps)==gaps
+
+def molecule():
+    from rdkit import Chem
+    from rdkit.Chem import AllChem
+    mol=Chem.AddHs(Chem.MolFromSmiles('CCO')); AllChem.EmbedMolecule(mol,randomSeed=17)
+    return Chem.RemoveHs(mol)
+
+def test_a_pose_is_written_as_hetatm_records_plip_can_read():
+    block=interactions.ligand_pdb_block(molecule(),'LIG')
+    lines=[line for line in block.splitlines() if line.startswith('HETATM')]
+    assert len(lines)==3
+    for line in lines:
+        assert line[17:20]=='LIG' and line[21]=='Z' and line[22:26].strip()=='900'
+        float(line[30:38]); float(line[38:46]); float(line[46:54])
+
+def test_audit_poses_repairs_the_receptor_once_for_every_pose(monkeypatch):
+    monkeypatch.setattr(interactions,'tooling',lambda:{'method':interactions.METHOD,'available':True,'versions':{},'missing':[]})
+    repairs=[]
+    def repair(text,**kw):
+        repairs.append(text); return 'PREPARED\n',{'tool':'pdbfixer','missing_residues_reported':[]}
+    monkeypatch.setattr(interactions,'repair_receptor',repair)
+    monkeypatch.setattr(interactions,'thresholds',lambda:{'HBOND_DIST_MAX':4.1})
+    seen=[]
+    def fake(receptor,ligand,**kw):
+        seen.append(kw['repair'])
+        return {'status':'complete','interactions':[{'interaction':'hydrophobic','chain':'A','sequence':76,'residue':'PHE'}],'residues':[]}
+    monkeypatch.setattr(interactions,'audit_block',fake)
+    shared,per_pose=interactions.audit_poses('RECEPTOR\n',[molecule(),molecule()],receptor_label='r.pdb')
+    assert len(repairs)==1 and seen==[False,False]
+    assert shared['status']=='complete' and shared['thresholds']=={'HBOND_DIST_MAX':4.1}
+    assert len(per_pose)==2 and per_pose[0]['interactions'][0]['interaction']=='hydrophobic'
+    assert shared['receptor']=='r.pdb' and shared['limitations']
+
+def test_audit_poses_without_the_tools_returns_one_empty_entry_per_pose(monkeypatch):
+    monkeypatch.setattr(interactions,'tooling',lambda:{'method':interactions.METHOD,'available':False,'versions':{},'missing':['plip (ImportError)']})
+    shared,per_pose=interactions.audit_poses('RECEPTOR\n',[1,2,3])
+    assert shared['status']=='unavailable' and len(per_pose)==3
+    assert all(entry['interactions']==[] and entry['status']=='unavailable' for entry in per_pose)

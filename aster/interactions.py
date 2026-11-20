@@ -54,7 +54,9 @@ PLIP_FIELDS = (
     ('coordination', 'metal_coordination'), ('num', 'metal_coordination_number'),
 )
 
-PACKAGES = ('plip', 'pdbfixer', 'openmm', 'openbabel-wheel')
+# Open Babel is PLIP's own dependency and it decides the receptor protonation, so
+# its version belongs in the record beside PLIP's.
+PACKAGES = ('plip', 'pdbfixer', 'openmm', 'openbabel')
 
 
 def tooling():
@@ -330,6 +332,54 @@ def audit_block(receptor_pdb, ligand_block, receptor_label=None, repair=True,
     except Exception as error:                   # pragma: no cover - environment dependent
         return {**base, 'status': 'failed',
                 'reason': f'{type(error).__name__}: {error}'}
+
+
+def audit_poses(receptor_pdb, molecules, receptor_label=None, ligand_residue='LIG'):
+    """Audit several poses against one receptor, repairing the receptor once.
+
+    Returns (shared, per_pose). `shared` carries the tool versions, the repair
+    report and the thresholds, which are the same for every pose; `per_pose`
+    carries one list of named interactions per pose, in the order given. The
+    repair is done once because PDBFixer on a transporter-sized receptor is the
+    slow part and ten poses share the same receptor.
+    """
+    state = tooling()
+    shared = {'method': METHOD, 'receptor': receptor_label, 'versions': state['versions'],
+              'ligand_residue': ligand_residue}
+    if not state['available']:
+        return ({**shared, 'status': 'unavailable', 'missing': state['missing'],
+                 'reason': 'PLIP and PDBFixer are installed only in the docking environment.'},
+                [{'status': 'unavailable', 'interactions': []} for _ in molecules])
+    try:
+        prepared, repair_report = repair_receptor(receptor_pdb)
+    except Exception as error:                   # pragma: no cover - environment dependent
+        return ({**shared, 'status': 'failed',
+                 'reason': f'Receptor repair failed. {type(error).__name__}: {error}'},
+                [{'status': 'failed', 'interactions': []} for _ in molecules])
+    per_pose, status = [], 'complete'
+    for molecule in molecules:
+        report = audit_block(prepared, ligand_pdb_block(molecule, ligand_residue),
+                             receptor_label=receptor_label, repair=False,
+                             ligand_residue=ligand_residue)
+        entry = {'status': report['status'], 'interactions': report.get('interactions', []),
+                 'residues': report.get('residues', [])}
+        if report['status'] != 'complete':
+            entry['reason'] = report.get('reason') or report.get('missing')
+            status = 'partial'
+        per_pose.append(entry)
+    first = next((m for m in molecules), None)
+    if first is not None:
+        repair_report['missing_residues_reported'] = gap_distances(
+            build_complex(prepared, ligand_pdb_block(first, ligand_residue)),
+            repair_report.get('missing_residues_reported') or [], ligand_residue)
+    shared.update(status=status if per_pose else 'complete', repair=repair_report,
+                  thresholds=thresholds(),
+                  limitations=[
+                      'Named interactions are geometry and protonation assignments, not measured binding.',
+                      'Receptor hydrogens are placed by PLIP via Open Babel, not by pH enumeration.',
+                      'Whole missing residues are reported, not built, so a gap near the pocket can hide an interaction.',
+                  ])
+    return shared, per_pose
 
 
 def main(argv=None):                             # pragma: no cover - thin CLI
