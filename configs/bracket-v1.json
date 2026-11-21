@@ -1,0 +1,35 @@
+{
+  "version": "bracket-v1",
+  "question": "Does a second model family, TabPFN over frozen pretrained molecular features, pick better batches or predict more accurately than Aster's Morgan-fingerprint ridge default on the same time-ordered splits?",
+  "hypothesis": "Stated before the run: on a few hundred to a few thousand measurements per endpoint, TabPFN's in-context fit is expected to beat ridge on accuracy by a small margin and to be indistinguishable on the batch-selection metric, because selection depends on the ranking of the top of the pool rather than on average error. A null result is reported as a null.",
+  "base_config": "configs/temporal-v1.json",
+  "base_config_note": "Splits, endpoints, transforms, minimum sizes and the batch criteria are inherited from the temporal protocol rather than restated, so that bracket numbers can be read beside docs/TEMPORAL_RESULTS.md.",
+  "bracket_note": "A bracket logs both families per case. The product default is not replaced by a result in this file; queue item 11 asks for a deliberate two-model bracket, and replacing the default would need its own decision.",
+  "control_seeds": [0, 1, 2, 3, 4],
+  "control_seeds_note": "Five matched random splits per endpoint, against the twenty the temporal error study uses, because each case here fits a transformer per arm rather than a ridge. The power accounting in the output reports what the pairs can detect at this count.",
+  "arms": {
+    "chemeleon": {
+      "description": "Frozen CheMeleon embeddings, the pretrained molecular representation already pinned in configs/transfer-v1.json. No assay label enters feature generation.",
+      "checkpoint": "data/models/chemeleon_mp.pt",
+      "checkpoint_sha256": "c376624d3407204e780a0ed13a9ac097cc9bb1c13ef89cdbc633c1715c183651",
+      "cache": "data/embeddings"
+    },
+    "tabpfn": {
+      "description": "TabPFN: a transformer pretrained on synthetic tables that predicts a new table in one forward pass, with no gradient training on the assay data.",
+      "checkpoint": "data/models/tabpfn-v2-regressor.ckpt",
+      "checkpoint_sha256": "UNVERIFIED-SET-BEFORE-FIRST-RUN",
+      "checkpoint_note": "Not downloaded by this code. Prior Labs distribute the weights through Hugging Face under their own licence, and recent package releases require a one-time licence acceptance and an API token. Put the checkpoint at this path, then replace the placeholder with its sha256sum; a run with the placeholder in place stops rather than using unpinned weights.",
+      "device": "cpu",
+      "random_state": 0,
+      "n_estimators": 4,
+      "feature_budget": 200,
+      "feature_budget_note": "Columns kept for a TabPFN arm, chosen by variance across the training rows only. TabPFN is built for tables of at most a few hundred columns; a 2048-bit fingerprint and a 2048-wide embedding are both outside that regime."
+    }
+  },
+  "reporting": {
+    "primary_metric": "normalised_mae",
+    "secondary_metric": "hits",
+    "pairing": "Each arm is compared with the default on the identical endpoint, split and seed, so the unit of analysis is a paired per-case difference.",
+    "null_handling": "A mean difference near zero is reported with the minimum detectable effect beside it and is never described as equivalence."
+  }
+}
