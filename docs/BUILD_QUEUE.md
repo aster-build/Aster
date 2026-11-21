@@ -110,10 +110,20 @@ reads the queue, it does not plan.
   with a prepared receptor, the dopamine transporter on PDB 8Y2G. This closes a
   deferral `ROADMAP.md` already acknowledges.
 
-- [ ] **11. Add TabPFN over pretrained features as a second model family.**
+- [x] **11. Add TabPFN over pretrained features as a second model family.**
   Logged per batch as a deliberate two-model bracket, not as a replacement for
   Morgan plus ridge. Use `aster/evidence_power.py` for the power accounting
   rather than rolling a new one.
+  Harness done, comparison NOT run. `aster/model_bracket.py` runs three arms on
+  the temporal protocol's own splits and pairs each against the default through
+  `aster/evidence_power.py`. The build machine cannot download either pretrained
+  checkpoint (Hugging Face serves them from a host the network policy refuses)
+  and current TabPFN releases also require a licence token, so both TabPFN arms
+  recorded themselves as `unavailable`. The design was priced instead: 54 cases
+  detect 0.10 normalised error units but only about 3 compounds per 40-assay
+  batch, so as declared the bracket cannot settle whether a better model buys
+  better picks. Details and the steps to run it with weights in hand are in
+  `docs/MODEL_BRACKET.md`.
 
 - [ ] **12. Align the record to published vocabulary.** Argonne's append-only
   event-log record types, the replay metrics of Mas et al. (Digital Discovery,
