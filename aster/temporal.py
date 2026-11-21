@@ -121,7 +121,8 @@ def fit_predict(features: np.ndarray, values: np.ndarray, train: np.ndarray,
 
 
 def fit_and_score(features: np.ndarray, values: np.ndarray, train: np.ndarray,
-                  test: np.ndarray, settings: dict) -> dict:
+                  test: np.ndarray, settings: dict,
+                  predicted: np.ndarray | None = None) -> dict:
     """Fit the product default on the training rows and score the held-out rows.
 
     The model never sees a test value. ``training_mean_mae`` is the error of
@@ -129,9 +130,18 @@ def fit_and_score(features: np.ndarray, values: np.ndarray, train: np.ndarray,
     model has to beat; ``normalised_mae`` divides the error by the spread of the
     test values themselves, so a value of one means the model is no better than
     knowing the answers' average and the nine endpoints can be averaged together.
+
+    ``predicted`` scores predictions that were produced elsewhere, which is how
+    ``aster.model_bracket`` scores a second model family through this same
+    function instead of a parallel one. Left out, the product default is fitted
+    here exactly as before.
     """
     y_train, y_test = values[train], values[test]
-    predicted = fit_predict(features, values, train, test, settings)
+    if predicted is None:
+        predicted = fit_predict(features, values, train, test, settings)
+    predicted = np.asarray(predicted, dtype=float)
+    if predicted.shape != (len(test),):
+        raise ValueError("Supplied predictions do not match the held-out rows.")
     residual = predicted - y_test
     spread = float(np.std(y_test, ddof=1))
     correlation = stats.spearmanr(predicted, y_test)
