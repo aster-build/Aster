@@ -21,8 +21,12 @@ for experimental decisions, for any endpoint and any assay, with one number per 
   `/campaigns/{id}/decisions`. Every number is read from what was stored at decision time.
 - [x] A pick with no result reads `awaiting_result` and a failed assay reads `no_result`;
   neither is silently scored. Compounds never picked are explained, not invented.
-- [ ] **Censored values are still unsupported.** An assay reporting ">10 µM" cannot be
-  recorded faithfully, so that is the next gap in the data model.
+- [x] Censored measurements are stored as `{relation, value, unit}`: an assay reporting
+  ">10 µM" is recorded faithfully, fitted as a bound rather than as the number, and left
+  out of the error and coverage figures it cannot contribute to. Measured three ways in
+  [CENSORED.md](docs/CENSORED.md): keeping the measurement is worth +0.65 strong
+  compounds per 32 assays against discarding it, while fitting it as a bound rather than
+  substituting the bound changed no pick on this dataset.
 - [ ] Provenance class per value, and a review of the record by a discovery scientist.
 
 See [DECISION_RECORD.md](docs/DECISION_RECORD.md). `review` reports only measured picks:
