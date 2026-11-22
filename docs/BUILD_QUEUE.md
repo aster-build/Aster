@@ -104,11 +104,17 @@ reads the queue, it does not plan.
   RDKit version that applied them. Reported to move some error metrics by over
   20%, so an unrecorded convention makes two campaigns incomparable.
 
-- [ ] **10. Replace the 4 Å proximity rule with a real interaction audit.** Use
+- [x] **10. Replace the 4 Å proximity rule with a real interaction audit.** Use
   PDBFixer to repair the receptor and PLIP to list actual hydrogen bonds,
   hydrophobic contacts, salt bridges and ring stacking. Scope: the one target
   with a prepared receptor, the dopamine transporter on PDB 8Y2G. This closes a
   deferral `ROADMAP.md` already acknowledges.
+  Done. `aster/interactions.py` plus `docs/INTERACTION_AUDIT.md`. On the
+  deposited 8Y2G complex, 10 residues are within 4 Å and 5 of them carry a
+  named interaction; the closest contact in the old list, SER A:422 at 2.83 Å,
+  is a backbone oxygen against a ligand carbon and names nothing. The pose path
+  is wired and unit-tested but not run end to end: that needs the Vina binary
+  and the validated receptor, which are not in the build container.
 
 - [x] **11. Add TabPFN over pretrained features as a second model family.**
   Logged per batch as a deliberate two-model bracket, not as a replacement for

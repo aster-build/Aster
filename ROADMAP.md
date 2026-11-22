@@ -184,7 +184,7 @@ no robotics, dimOS, or robot-planning functionality is in scope.
 Architecture: existing Next.js/React shell + client-only Mol*; Next.js serves pinned
 mmCIF assets and provenance; FastAPI serves recorded campaign artifacts; SQLite/local artifacts store
 replay manifests. RDKit handles molecular identity; PLIP is deferred; this first version uses explicitly labelled ≤4 Å heavy-atom
-proximity with verified atom mappings. No GPU training is required for this first viewer.
+proximity with verified atom mappings. (The PLIP deferral was closed on 2026-11-20; see `docs/INTERACTION_AUDIT.md`.) No GPU training is required for this first viewer.
 
 Exit gate: one verified reference complex, synchronized compound/residue selection,
 two replayed campaign rounds with outputs matching saved records, source/type labels,
