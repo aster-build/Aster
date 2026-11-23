@@ -230,6 +230,13 @@ carries a probe hash, so two campaigns can be checked for the same reading of
 structures before their error figures are compared. Rounds from before this was logged
 say `unknown`. See [STANDARDISATION.md](STANDARDISATION.md).
 
+## Reading it outside Aster
+
+The same record can be exported in published vocabularies: as an append-only event log
+in the record types of the Argonne observability profile (with its five invariants
+checked), and as an RO-Crate archive with W3C PROV provenance. Both read only what was
+stored. See [VOCABULARY.md](VOCABULARY.md).
+
 ## What this deliberately does not do
 
 - It does not put evidence into the ranking. [Milestone 9](EVIDENCE_SELECTION.md) tested
