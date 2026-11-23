@@ -33,6 +33,7 @@ import importlib.metadata
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 from .campaign import declaration, load
 from .decisions import record as decision_record
@@ -58,8 +59,15 @@ def _dump(value):
     return json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + '\n'
 
 
+def _iri(ident):
+    """A local identifier for an event id. Compound and assay names can hold spaces or
+    other characters an IRI cannot, so they are percent-encoded; the event log keeps the
+    original id, and `identifier` on each entity carries it too."""
+    return '#' + quote(ident, safe=':_-.~')
+
+
 def _ref(ident):
-    return {'@id': f'#{ident}'}
+    return {'@id': _iri(ident)}
 
 
 def _refs(idents):
@@ -71,13 +79,13 @@ def _refs(idents):
 def _agent(row, state):
     stream = row['id']
     if stream == SELECTION:
-        return {'@id': f'#{stream}', '@type': ['SoftwareApplication', 'prov:Agent'],
+        return {'@id': _iri(stream), 'identifier': stream, '@type': ['SoftwareApplication', 'prov:Agent'],
                 'name': 'Aster selection policy',
                 'softwareVersion': _version(), 'description': row['note']}
     if stream == PERSON:
-        return {'@id': f'#{stream}', '@type': ['Person', 'prov:Agent'],
+        return {'@id': _iri(stream), 'identifier': stream, '@type': ['Person', 'prov:Agent'],
                 'name': 'A person using Aster (identity not recorded)', 'description': row['note']}
-    return {'@id': f'#{stream}', '@type': ['Thing', 'prov:Agent'],
+    return {'@id': _iri(stream), 'identifier': stream, '@type': ['Thing', 'prov:Agent'],
             'name': f"Assay {state['assay']}", 'description': row['note']}
 
 
@@ -121,7 +129,7 @@ def metadata(state, rows, files, *, license=None):
         elif row['record_type'] == 'individual' and row['kind'] != 'claim':
             # Claims are evidence-bound statements, not derived artifacts; they stay in
             # events.jsonl with their bindings rather than becoming bare PROV entities.
-            entity = {'@id': f"#{row['id']}", '@type': ['Thing', 'prov:Entity'],
+            entity = {'@id': _iri(row['id']), 'identifier': row['id'], '@type': ['Thing', 'prov:Entity'],
                       'name': row['id'].split(':', 1)[1] if row['kind'] == 'molecule' else row['id'],
                       'recordKind': row['kind'], 'payloadHash': row['payload_hash'],
                       'dateCreated': row['created_at']}
@@ -131,17 +139,17 @@ def metadata(state, rows, files, *, license=None):
                 entity['prov:wasGeneratedBy'] = _refs(generated[row['id']])
             graph.append(entity)
         elif row['record_type'] == 'operator':
-            action = {'@id': f"#{row['id']}", '@type': ['CreateAction', 'prov:Activity'],
+            action = {'@id': _iri(row['id']), 'identifier': row['id'], '@type': ['CreateAction', 'prov:Activity'],
                       'name': row['op_type'], 'endTime': row['timestamp'],
-                      'agent': {'@id': f"#{row['emitter_stream']}"},
+                      'agent': _ref(row['emitter_stream']),
                       'object': _refs(row['parent_ids']),
                       'result': _refs(row['child_ids']),
                       'prov:used': _refs(row['parent_ids']),
-                      'prov:wasAssociatedWith': {'@id': f"#{row['emitter_stream']}"}}
+                      'prov:wasAssociatedWith': _ref(row['emitter_stream'])}
             if row.get('note'):
                 action['description'] = row['note']
             graph.append(action)
-            root['mentions'].append({'@id': f"#{row['id']}"})
+            root['mentions'].append(_ref(row['id']))
     return {'@context': CONTEXT, '@graph': graph}
 
 

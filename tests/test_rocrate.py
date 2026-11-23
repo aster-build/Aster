@@ -87,3 +87,22 @@ def test_it_will_not_write_over_an_existing_directory(tmp_path, campaign):
     with pytest.raises(ValueError):
         write(campaign, out)
     assert (out/'keep.txt').read_text() == 'mine'
+
+
+def test_names_with_spaces_become_valid_local_identifiers(tmp_path):
+    from test_event_log import csv_file
+    from aster.campaign import create
+    measured = csv_file(tmp_path/'measured.csv', ['compound_id', 'smiles', 'value'],
+                        [{'compound_id': f'cmpd {i}', 'smiles': 'C'*(i+1), 'value': 5+i/32}
+                         for i in range(32)])
+    candidates = csv_file(tmp_path/'candidates.csv', ['compound_id', 'smiles'],
+                          [{'compound_id': f'cand {i}', 'smiles': 'C'*(i+1)+'N'} for i in range(8)])
+    path = tmp_path/'spaces.sqlite'
+    create(path, measured, candidates, name='Spaces', assay='CHEMBL238 Ki', endpoint='pKi')
+    out = tmp_path/'crate'
+    write(path, out)
+    _, entities = graph(out)
+    assert not any(' ' in i for i in entities)
+    assay = entities['#stream:assay:CHEMBL238%20Ki']
+    assert assay['identifier'] == 'stream:assay:CHEMBL238 Ki'
+    assert entities['#molecule:cmpd%200']['identifier'] == 'molecule:cmpd 0'
