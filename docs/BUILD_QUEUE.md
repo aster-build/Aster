@@ -161,9 +161,27 @@ reads the queue, it does not plan.
   better picks. Details and the steps to run it with weights in hand are in
   `docs/MODEL_BRACKET.md`.
 
-- [ ] **12. Align the record to published vocabulary.** Argonne's append-only
+- [x] **12. Align the record to published vocabulary.** Argonne's append-only
   event-log record types, the replay metrics of Mas et al. (Digital Discovery,
   2026), and RO-Crate with W3C PROV for archiving. Cite rather than reinvent.
+  Two of three parts done; the third is split out as item 13. `aster/event_log.py`
+  reads a campaign back in the seven record types of arXiv:2608.18312 Table A.1
+  and checks its five invariants: four hold on the CHEMBL238 replay (919 events,
+  32 claims all bound to evidence) and the fifth, redaction, does not apply.
+  `aster/rocrate.py` packages a campaign as an RO-Crate 1.1 with the paper's PROV
+  mapping; `rocrate-validator` passes 25 of 26 requirements offline, the last
+  needing the context from w3id.org, which the build machine cannot reach. Gap
+  found: Aster records no assay protocol version, only the hash of the file a
+  measurement came in. See `docs/VOCABULARY.md`.
+
+- [ ] **13. Add the replay metrics of Mas et al.** Pablo Mas, Bruno
+  Filoche-Rommé, Marc Bianciotto, Rodolphe Vuilleumier, "Back to the future of
+  lead optimization: benchmarking compound prioritization strategies", Digital
+  Discovery 2026, 5(7), 2983-2997, doi:10.1039/D5DD00387C. Split from item 12.
+  **blocked:** the formulas (reported as PTMR, internal diversity, #Circles,
+  neighbourhood coverage and NCAUC) have only been seen through a summary; the
+  publisher and ChemRxiv refuse automated fetches. Drop the PDF into the
+  project's shared folder, or paste section 3.3, and remove this line.
 
 ## Not in this queue
 
